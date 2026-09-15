@@ -1,0 +1,31 @@
+Song Schema,,
+Column,Type ,Notes
+song_id ,text,Primary Key
+title ,text,can't be null
+artist,text,can't be null
+album,text,
+duration,int,
+explitcit,boolean,
+release_date,date,support user search filter for songs
+url,text,
+popularity_score,int,Spotify API metric 
+,,
+User Schema,,
+Column,Type,Note 
+user_id,text,Primary Key 
+email,text,unique
+username,text,text
+create_at,text,
+updated_at,text,
+,,
+UserSongPreferences,,
+Column,Type,Note
+user_id,text,can't be null
+song_id,text,can't be null
+,,
+Recommendations,,
+Column,Type,Column
+user_id,text,can't be null
+song_id,text,can't be null
+score,double,
+reason,text ,
