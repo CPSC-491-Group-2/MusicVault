@@ -75,11 +75,51 @@ The project structure is currently being established during Sprint 1.
 Planned structure:
 
 ```text
-MusicVault/
-├── frontend/        # Next.js frontend
-├── backend/         # Flask backend/API
-├── database/        # Database configuration/models
-├── docs/            # Project documentation
-└── README.md
-
-* subject to change *
+musicvault/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── library/
+│   │   │   │   └── page.tsx
+│   │   │   ├── search/
+│   │   │   │   └── page.tsx
+│   │   │   └── profile/
+│   │   │       └── page.tsx
+│   │   │
+│   │   ├── components/
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── SongCard.tsx
+│   │   │   └── HealthStatus.tsx
+│   │   │
+│   │   ├── services/
+│   │   │   └── api.ts
+│   │   │
+│   │   └── types/
+│   │       └── api.ts
+│   │
+│   ├── .env.local
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   │
+│   │   ├── routes/
+│   │   │   ├── __init__.py
+│   │   │   └── health.py
+│   │   │
+│   │   └── errors/
+│   │       ├── __init__.py
+│   │       └── handlers.py
+│   │
+│   ├── run.py
+│   ├── requirements.txt
+│   └── .env
+│
+├── README.md
+└── .gitignore
