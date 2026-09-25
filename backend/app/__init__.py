@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
+from flask_smorest import Api
 
 from app.config import Config
 from app.errors.handlers import register_error_handlers
@@ -16,10 +17,13 @@ def create_app():
         resources={r"/api/*": {"origins": app.config["FRONTEND_URL"]}},
     )
 
-    app.register_blueprint(
+    api = Api(app)
+
+    api.register_blueprint(
         health_bp,
         url_prefix="/api/v1",
-)
+    )
+
     register_error_handlers(app)
 
     return app

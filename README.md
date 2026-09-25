@@ -236,11 +236,32 @@ API errors use a consistent JSON structure:
 
 The Flask backend provides interactive OpenAPI documentation through Swagger UI.
 
+Start the backend:
+
+```bash
+cd backend
+python run.py
+```
+
 With the backend running, Swagger UI is available at:
 
 ```text
 http://127.0.0.1:5000/docs
 ```
+
+The API is versioned under:
+
+```text
+/api/v1
+```
+
+Example endpoint:
+
+```text
+GET /api/v1/health
+```
+
+The OpenAPI schema is generated from the Flask routes and Marshmallow schemas.
 
 API response schemas are defined in the Flask backend, and corresponding TypeScript interfaces are maintained in:
 
