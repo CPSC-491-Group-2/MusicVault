@@ -57,3 +57,51 @@ musicvault/
 │
 ├── .gitignore
 └── README.md
+
+## API Contract
+
+MusicVault uses a REST API provided by the Flask backend.
+
+API endpoints are versioned under:
+
+```text
+/api/v1
+```
+
+For example:
+
+```text
+GET /api/v1/health
+```
+
+Successful API responses use JSON.
+
+Example:
+
+```json
+{
+  "service": "MusicVault API",
+  "status": "ok"
+}
+```
+
+The frontend maintains TypeScript interfaces for expected API
+responses in:
+
+```text
+frontend/types/api.ts
+```
+
+Backend and frontend changes to an API response should be updated
+together to keep the API contract synchronized.
+
+### Error Format
+
+API errors use the following structure:
+
+```json
+{
+  "error": "Not Found",
+  "message": "The requested resource was not found."
+}
+```
