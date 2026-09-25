@@ -105,3 +105,34 @@ API errors use the following structure:
   "message": "The requested resource was not found."
 }
 ```
+
+## OpenAPI Documentation
+
+The Flask backend exposes interactive OpenAPI documentation.
+
+Start the backend:
+
+```bash
+cd backend
+python run.py
+```
+
+Swagger UI is available at:
+
+```text
+http://127.0.0.1:5000/docs
+```
+
+The API is versioned under:
+
+```text
+/api/v1
+```
+
+Example endpoint:
+
+```text
+GET /api/v1/health
+```
+
+The OpenAPI schema is generated from the Flask routes and Marshmallow schemas.
