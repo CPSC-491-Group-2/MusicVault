@@ -24,19 +24,32 @@ MusicVault aims to provide users with a personalized music discovery experience.
 - Music analytics and visualizations
 - Responsive web interface
 
-## Planned Technology Stack
+## Technology Stack
 
-The current planned stack includes:
+### Frontend
 
-- **Frontend:** Next.js
-- **Backend:** Flask
-- **Database:** PostgreSQL
-- **Database ORM:** SQLAlchemy
-- **External API:** Spotify Web API
-- **Version Control:** GitHub
-- **Project Management:** Jira
+- Next.js
+- React
+- TypeScript
+- ESLint
 
-The architecture and individual technologies may be adjusted as the team evaluates the existing MusicVault prototype and completes Sprint 1.
+### Backend
+
+- Python
+- Flask
+- Flask-CORS
+- Black
+- Ruff
+
+### Additional Technologies
+
+- PostgreSQL
+- SQLAlchemy
+- Spotify Web API
+- GitHub
+- Jira
+
+The architecture and individual technologies may be adjusted as the team evaluates the existing MusicVault prototype and continues development.
 
 ## Current Development Status
 
@@ -68,18 +81,187 @@ Typical workflow:
 
 Code should not be pushed directly to the main branch.
 
-## Project Structure
-
-The project structure is currently being established during Sprint 1.
-
-Planned structure:
+## Repository Structure
 
 ```text
 MusicVault/
-├── frontend/        # Next.js frontend
-├── backend/         # Flask backend/API
-├── database/        # Database configuration/models
-├── docs/            # Project documentation
+├── backend/
+│   ├── app/
+│   │   ├── errors/
+│   │   │   ├── __init__.py
+│   │   │   └── handlers.py
+│   │   ├── routes/
+│   │   │   ├── __init__.py
+│   │   │   └── health.py
+│   │   ├── __init__.py
+│   │   └── config.py
+│   ├── run.py
+│   ├── requirements.txt
+│   └── pyproject.toml
+│
+├── frontend/
+│   ├── app/
+│   │   ├── library/
+│   │   ├── profile/
+│   │   ├── search/
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── HealthStatus.tsx
+│   │   └── Navbar.tsx
+│   ├── services/
+│   │   └── api.ts
+│   └── types/
+│       └── api.ts
+│
+├── database/
+├── docs/
+├── .gitignore
 └── README.md
+```
 
-* subject to change *
+The repository structure may change as MusicVault development continues.
+
+## Running the Backend
+
+Navigate to the backend directory:
+
+```bash
+cd backend
+```
+
+Create a Python virtual environment:
+
+```bash
+python -m venv venv
+```
+
+Activate the virtual environment on Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Start the Flask server:
+
+```bash
+python run.py
+```
+
+The backend runs at:
+
+```text
+http://127.0.0.1:5000
+```
+
+## Running the Frontend
+
+Open another terminal and navigate to the frontend directory:
+
+```bash
+cd frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the Next.js development server:
+
+```bash
+npm run dev
+```
+
+The frontend runs at:
+
+```text
+http://localhost:3000
+```
+
+## API
+
+The MusicVault REST API is versioned under:
+
+```text
+/api/v1
+```
+
+### Health Check
+
+```text
+GET /api/v1/health
+```
+
+Example response:
+
+```json
+{
+  "service": "MusicVault API",
+  "status": "ok"
+}
+```
+
+API errors use a consistent JSON structure:
+
+```json
+{
+  "error": "Not Found",
+  "message": "The requested resource was not found."
+}
+```
+
+## OpenAPI Documentation
+
+The Flask backend provides interactive OpenAPI documentation through Swagger UI.
+
+With the backend running, Swagger UI is available at:
+
+```text
+http://127.0.0.1:5000/docs
+```
+
+API response schemas are defined in the Flask backend and corresponding TypeScript interfaces are maintained in:
+
+```text
+frontend/types/api.ts
+```
+
+Backend and frontend API changes should be updated together to keep the API contract synchronized.
+
+## Code Quality
+
+### Frontend
+
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+### Backend
+
+Check Python formatting:
+
+```bash
+black --check .
+```
+
+Run Ruff:
+
+```bash
+ruff check .
+```
+
+Automatically format Python code:
+
+```bash
+black .
+```
