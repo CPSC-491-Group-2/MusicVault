@@ -18,9 +18,8 @@ def create_app():
 
     app.register_blueprint(
         health_bp,
-        url_prefix="/api",
-    )
-
+        url_prefix="/api/v1",
+)
     register_error_handlers(app)
 
     return app

@@ -71,15 +71,15 @@ All development work should be completed on a separate branch.
 
 Typical workflow:
 
-1. Pull the latest version of the main branch.
+1. Pull the latest version of the `master` branch.
 2. Create a branch for the assigned Jira task.
 3. Make and test changes on that branch.
 4. Commit and push the branch to GitHub.
 5. Open a Pull Request.
 6. Have another team member review the Pull Request.
-7. Merge approved changes into the main branch.
+7. Merge approved changes into `master`.
 
-Code should not be pushed directly to the main branch.
+Code should not be pushed directly to `master`.
 
 ## Repository Structure
 
@@ -188,7 +188,9 @@ http://localhost:3000
 
 ## API
 
-The MusicVault REST API is versioned under:
+MusicVault uses a REST API provided by the Flask backend.
+
+API endpoints are versioned under:
 
 ```text
 /api/v1
@@ -200,6 +202,8 @@ The MusicVault REST API is versioned under:
 GET /api/v1/health
 ```
 
+Successful API responses use JSON.
+
 Example response:
 
 ```json
@@ -208,6 +212,16 @@ Example response:
   "status": "ok"
 }
 ```
+
+The frontend maintains TypeScript interfaces for expected API responses in:
+
+```text
+frontend/types/api.ts
+```
+
+Backend and frontend changes to an API response should be updated together to keep the API contract synchronized.
+
+### Error Format
 
 API errors use a consistent JSON structure:
 
@@ -228,7 +242,7 @@ With the backend running, Swagger UI is available at:
 http://127.0.0.1:5000/docs
 ```
 
-API response schemas are defined in the Flask backend and corresponding TypeScript interfaces are maintained in:
+API response schemas are defined in the Flask backend, and corresponding TypeScript interfaces are maintained in:
 
 ```text
 frontend/types/api.ts
