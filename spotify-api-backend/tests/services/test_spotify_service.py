@@ -33,7 +33,7 @@ def test_get_user_top_track_rejects_negative_offset():
     with pytest.raises(ValueError, match="offset must be greater than 0"):
         service.get_user_top_track(offset=-1)
 
-
+#Test get_user_top_track()
 @patch("services.spotify_service.requests.get")
 def test_get_user_top_track_success(mock_get):
     # Create a fake Spotify HTTP response
@@ -87,3 +87,63 @@ def test_get_user_top_track_success(mock_get):
         },
         timeout=10
     )
+
+#Test get_track() function
+@patch("services.spotify_service.requests.get")
+def test_search_track_success(mock_get):
+    mock_response = Mock()
+    mock_response.status_code = 200
+
+    mock_response.json.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "id": "track123",
+                    "name": "Example Song",
+                    "artists": [
+                        {
+                            "id": "artist123",
+                            "name": "Example Artist"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    mock_get.return_value = mock_response
+
+    service = SpotifyService(FAKE_TOKEN)
+
+    result = service.search_track(
+        query="Example Song Example Artist",
+        limit=10
+    )
+
+    assert result["tracks"]["items"][0]["id"] == "track123"
+    assert result["tracks"]["items"][0]["name"] == "Example Song"
+
+    mock_get.assert_called_once_with(
+        "https://api.spotify.com/v1/search",
+        headers={
+            "Authorization": f"Bearer {FAKE_TOKEN}"
+        },
+        params={
+            "q": "Example Song Example Artist",
+            "type": "track",
+            "limit": 10
+        },
+        timeout=10
+    )
+
+def test_search_track_rejects_empty_query():
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(ValueError, match="empty query"):
+        service.search_track("")
+
+def test_search_track_rejects_blank_query():
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(ValueError, match="empty query"):
+        service.search_track("   ")

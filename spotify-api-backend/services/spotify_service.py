@@ -47,7 +47,34 @@ class SpotifyService:
         if response.status_code == 200:
             return response.json()
 
-    #def search_track():
+    def search_track(self, query: str, limit: int = 10):
+         #validating query (no empty search allow)
+         if not query or not query.strip():
+              raise ValueError ("empty query")
+
+         #validating limit
+         if limit < 1 or limit > 50:
+              raise ValueError("limit must be between 1 and 50")
+         #build endpoint (Spotify endpoint for search is: /search)
+         endpoint = f"{self.base_url}/search"
+
+         #build params
+         params = {
+              "q": query,
+              "type": "track",
+              "limit": limit
+         }
+
+         #send GET request
+         response = requests.get(
+              endpoint, 
+              headers= self.headers,
+              params = params,
+              timeout = 10
+         )
+         #handle response 
+         if response.status_code == 200:
+              return response.json()
     
     #def get_track():
     
