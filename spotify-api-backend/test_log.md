@@ -69,3 +69,21 @@ E       ModuleNotFoundError: No module named 'backend'
 FAILED tests/services/test_spotify_service.py::test_get_user_top_track_success - ModuleNotFoundError: No module named 'backend'
 ================= 1 failed, 4 passed in 0.24s =================
 ```
+#Second Test
+```(.venv) minhcranel@minhcranel-Latitude-3301:~/Documents/projects/MusicVault/spotify-api-backend$ pytest tests/services/test_spotify_service.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/minhcranel/Documents/projects/MusicVault/spotify-api-backend/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/minhcranel/Documents/projects/MusicVault/spotify-api-backend
+collected 5 items                                                              
+
+tests/services/test_spotify_service.py::test_get_user_top_track_rejects_limit_above_50 PASSED [ 20%]
+tests/services/test_spotify_service.py::test_get_user_top_track_rejects_limit_below_1 PASSED [ 40%]
+tests/services/test_spotify_service.py::test_get_user_top_track_rejects_invalid_time_range PASSED [ 60%]
+tests/services/test_spotify_service.py::test_get_user_top_track_rejects_negative_offset PASSED [ 80%]
+tests/services/test_spotify_service.py::test_get_user_top_track_success PASSED [100%]
+
+============================== 5 passed in 0.21s ===============================
+(.venv) minhcranel@minhcranel-Latitude-3301:~/Documents/projects/MusicVault/spot
+```
+**Result**: SpotifyService can be instatiated with access token. The function get_user\_top\_track() has rejected invalid limits and construct Spotify request correctly. It also correctly handles a successful mocked spotify response.  

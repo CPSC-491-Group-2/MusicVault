@@ -34,7 +34,7 @@ def test_get_user_top_track_rejects_negative_offset():
         service.get_user_top_track(offset=-1)
 
 
-@patch("backend.services.spotify_service.requests.get")
+@patch("services.spotify_service.requests.get")
 def test_get_user_top_track_success(mock_get):
     # Create a fake Spotify HTTP response
     mock_response = Mock()
