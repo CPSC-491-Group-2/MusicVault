@@ -31,6 +31,15 @@ def test_create_user_without_email(db_session):
     assert user.email is None
 
 
+def test_create_user_with_no_optional_fields(db_session):
+    # email and display_name are both optional; a bare user must still work.
+    user = create_user(db_session)
+
+    assert user.id is not None
+    assert user.email is None
+    assert user.display_name is None
+
+
 def test_duplicate_email_is_rejected(db_session):
     create_user(db_session, email="dup@example.com")
 
