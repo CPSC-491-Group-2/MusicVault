@@ -5,14 +5,37 @@ services:
     image: ghcr.io/cpsc-491-group-2/musicvault-backend:${TAG:-latest}
     build: ./backend
     restart: unless-stopped
+    networks:
+      - musicvault
     ports:
       - "5000:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/v1/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   frontend:
     image: ghcr.io/cpsc-491-group-2/musicvault-frontend:${TAG:-latest}
     build: ./frontend
     restart: unless-stopped
-    depends_on:
-      - backend
+    networks:
+      - musicvault
     ports:
       - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      # Hits the /api proxy, so it also proves frontend can reach backend.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/v1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+networks:
+  # Fixed name so other stacks (db, reverse proxy) can join it.
+  musicvault:
+    name: musicvault
