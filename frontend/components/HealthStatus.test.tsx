@@ -28,3 +28,25 @@ describe("HealthStatus", () => {
     });
   });
 });
+it("shows backend status when the API succeeds", async () => {
+  vi.mocked(getHealth).mockResolvedValue({
+    status: "ok",
+    service: "MusicVault API",
+  });
+
+  render(<HealthStatus />);
+
+  await waitFor(() => {
+    expect(
+      screen.getByText("Backend Status")
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Service: MusicVault API")
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Status: ok")
+    ).toBeInTheDocument();
+  });
+});
