@@ -23,7 +23,7 @@ jobs:
     runs-on: [self-hosted, prod-1]
 
     steps:
-      # Checked out for compose.yaml, pinned to the commit that was built.
+      # Checked out for compose.yml, pinned to the commit that was built.
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -49,13 +49,14 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           docker compose pull
-          docker compose up -d
+          docker compose up -d --no-build
           docker image prune -f
 
       - name: Health check
         run: |
           for i in $(seq 1 15); do
-            curl -fsS http://localhost:5000/api/v1/health && exit 0
+            # Goes through the frontend proxy, so both services are checked.
+            curl -fsS http://localhost:3000/api/v1/health && exit 0
             sleep 2
           done
           docker compose logs --tail 50
