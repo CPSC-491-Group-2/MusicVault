@@ -98,11 +98,13 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Install backend test dependencies
-        run: python -m pip install -r backend/requirements-dev.txt
+      - name: Install backend dependencies
+        run: |
+          python -m pip install -r backend/requirements.txt
+          python -m pip install -r backend/requirements-dev.txt
 
       - name: Run backend tests
-        run: python -m pytest backend/tests 
+        run: python -m pytest backend/tests
 
   frontend-lint:
     runs-on: ubuntu-latest
