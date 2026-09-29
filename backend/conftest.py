@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import pytest
 from sqlalchemy import event
 from sqlalchemy.exc import OperationalError
@@ -17,11 +19,18 @@ def client():
 
 @pytest.fixture
 def require_live_database():
-    """Skip the test cleanly if DATABASE_URL isn't reachable."""
+    """Skip the test cleanly if DATABASE_URL isn't reachable.
+
+    CI sets REQUIRE_TEST_DATABASE so a missing database fails the job instead
+    of silently skipping every account/database test.
+    """
     try:
         connection = engine.connect()
     except OperationalError as exc:
-        pytest.skip(f"No live database reachable at DATABASE_URL: {exc}")
+        message = f"No live database reachable at DATABASE_URL: {exc}"
+        if os.environ.get("REQUIRE_TEST_DATABASE"):
+            pytest.fail(message)
+        pytest.skip(message)
     else:
         connection.close()
 
