@@ -49,15 +49,34 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           docker compose pull
-          docker compose up -d --no-build
+          # --wait blocks until healthchecks pass or fails the step.
+          docker compose up -d --no-build --wait --wait-timeout 120
           docker image prune -f
 
-      - name: Health check
+      - name: Deployment status
+        if: always()
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          for i in $(seq 1 15); do
-            # Goes through the frontend proxy, so both services are checked.
-            curl -fsS http://localhost:3000/api/v1/health && exit 0
-            sleep 2
-          done
-          docker compose logs --tail 50
-          exit 1
+          host=$(hostname -I | awk '{print $1}')
+          {
+            echo "## Deployment: \`$TAG\`"
+            echo
+            echo "| Service | State | Health | Ports | Live |"
+            echo "|---|---|---|---|---|"
+            for pair in backend:5000 frontend:3000; do
+              svc=${pair%:*} port=${pair#*:}
+              id=$(docker compose ps -q "$svc")
+              state=$([ -n "$id" ] && docker inspect -f '{{.State.Status}}' "$id" || echo missing)
+              health=$([ -n "$id" ] && docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$id" || true)
+              # Frontend hits the same path through its /api proxy.
+              live=$(curl -fsS -o /dev/null --max-time 5 "http://localhost:$port/api/v1/health" && echo "✅" || echo "❌")
+              echo "| $svc | $state | ${health:--} | http://$host:$port | $live |"
+            done
+            echo
+            echo "Network: \`$(docker network inspect musicvault -f '{{range .Containers}}{{.Name}} {{end}}')\`"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail 100
