@@ -147,3 +147,49 @@ def test_search_track_rejects_blank_query():
 
     with pytest.raises(ValueError, match="empty query"):
         service.search_track("   ")
+
+#Mocked unit test for get_track()
+def test_get_track_rejects_empty_id():
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(ValueError, match="track_id cannot be empty"):
+        service.get_track("")
+
+@patch("services.spotify_service.requests.get")
+def test_get_track_success(mock_get):
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "id": "track123",
+        "name": "Lose Yourself",
+        "artists": [
+            {
+                "id": "artist123",
+                "name": "Eminem"
+            }
+        ],
+        "album": {
+            "id": "album123",
+            "name": "8 Mile"
+        },
+        "duration_ms": 326000
+    }
+
+    mock_get.return_value = mock_response
+
+    service = SpotifyService(FAKE_TOKEN)
+
+    result = service.get_track("track123")
+
+    assert result["id"] == "track123"
+    assert result["name"] == "Lose Yourself"
+    assert result["artists"][0]["name"] == "Eminem"
+    assert result["album"]["name"] == "8 Mile"
+
+    mock_get.assert_called_once_with(
+        "https://api.spotify.com/v1/tracks/track123",
+        headers={
+            "Authorization": f"Bearer {FAKE_TOKEN}"
+        },
+        timeout=10
+    )

@@ -90,7 +90,7 @@ tests/services/test_spotify_service.py::test_get_user_top_track_success PASSED [
 ```
 **Result**: SpotifyService can be instatiated with access token. The function get_user\_top\_track() has rejected invalid limits and construct Spotify request correctly. It also correctly handles a successful mocked spotify response.  
 
-# Test case for get_track function 
+# Test case for search_track function 
 ### First test 
 ```
 ============================= test session starts ==============================
@@ -111,3 +111,24 @@ tests/services/test_spotify_service.py::test_search_track_rejects_blank_query PA
 ============================== 8 passed in 0.15s ===============================
 ```
 **Result**: search track successfully getting track with valid input query. It's also successfully reject invalid input. 
+
+# Test case for get_track function 
+
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/minhcranel/Documents/projects/MusicVault/spotify-api-backend/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/minhcranel/Documents/projects/MusicVault/spotify-api-backend
+collected 10 items                                                             
+
+tests/services/test_spotify_service.py::test_get_user_top_track_rejects_limit_above_50 PASSED [ 10%]
+tests/services/test_spotify_service.py::test_get_user_top_track_rejects_limit_below_1 PASSED [ 20%]
+tests/services/test_spotify_service.py::test_get_user_top_track_rejects_invalid_time_range PASSED [ 30%]
+tests/services/test_spotify_service.py::test_get_user_top_track_rejects_negative_offset PASSED [ 40%]
+tests/services/test_spotify_service.py::test_get_user_top_track_success PASSED [ 50%]
+tests/services/test_spotify_service.py::test_search_track_success PASSED [ 60%]
+tests/services/test_spotify_service.py::test_search_track_rejects_empty_query PASSED [ 70%]
+tests/services/test_spotify_service.py::test_search_track_rejects_blank_query PASSED [ 80%]
+tests/services/test_spotify_service.py::test_get_track_rejects_empty_id PASSED [ 90%]
+tests/services/test_spotify_service.py::test_get_track_success PASSED    [100%]
+
+============================== 10 passed in 0.19s ==============================
