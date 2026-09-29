@@ -76,6 +76,17 @@ class SpotifyService:
          if response.status_code == 200:
               return response.json()
     
-    #def get_track():
-    
+    def get_track(self, track_id: str):
+         if not track_id or not track_id.strip():
+              raise ValueError("track_id cannot be empty")  
+         endpoint = f"{self.base_url}/tracks/{track_id}"
+
+         response = requests.get(
+              endpoint, 
+              headers = self.headers,
+              timeout = 10
+         )   
+
+         if response.status_code == 200:
+              return response.json()
     #def get_artist():
