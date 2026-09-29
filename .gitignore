@@ -1,2 +1,19 @@
+# Python
+venv/
+.venv/
 __pycache__/
+*.pyc
 *.py[cod]
+
+# Environment variables
+.env
+.env.local
+
+# Node / Next.js
+node_modules/
+.next/
+
+# VS Code / OS
+.vscode/
+.DS_Store
+Thumbs.db
