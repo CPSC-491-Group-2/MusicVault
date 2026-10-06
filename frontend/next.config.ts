@@ -2,6 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.scdn.co",
+        port: "",
+        pathname: "/image/**",
+        search: "",
+      },
+    ],
+  },
   // Proxies API calls to Flask; resolved at build time.
   async rewrites() {
     return [
