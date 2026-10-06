@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
-import Navbar from "../components/Navbar";
+import { Bricolage_Grotesque } from "next/font/google";
 
 import "./globals.css";
 
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  variable: "--font-bricolage",
+});
+
 export const metadata: Metadata = {
   title: "MusicVault",
-  description: "Music discovery and library application",
+  description:
+    "Music you'd love, from artists you haven't heard yet. Connect Spotify and MusicVault recommends songs weighted toward smaller artists.",
 };
 
 export default function RootLayout({
@@ -14,14 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <Navbar />
-
-        <main>
-          {children}
-        </main>
-      </body>
+    <html lang="en" className={bricolage.variable}>
+      <body>{children}</body>
     </html>
   );
 }
