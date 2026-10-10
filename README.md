@@ -271,6 +271,46 @@ frontend/types/api.ts
 
 Backend and frontend API changes should be updated together to keep the API contract synchronized.
 
+## Running Backend Tests
+
+The backend tests run against a separate PostgreSQL test database, never the development database. The test database name must end in `_test`, or pytest will refuse to run.
+
+Install the test dependencies:
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+```
+
+Create the test database and apply the schema (one-time setup):
+
+```bash
+createdb musicvault_test
+psql -d musicvault_test -f DDL/initial_schema.sql
+```
+
+Run the tests from the `backend` directory:
+
+```bash
+python -m pytest
+```
+
+By default the tests connect to:
+
+```text
+postgresql+psycopg2://localhost:5432/musicvault_test
+```
+
+To use a different user, password, or port, set `TEST_DATABASE_URL`:
+
+```bash
+TEST_DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/musicvault_test python -m pytest
+```
+
+If no test database is reachable, the database tests are skipped and the rest still run.
+
+GitHub Actions runs the same tests on every pull request and push to `master`, using a temporary PostgreSQL database that is discarded after each run. A failing test fails the workflow.
+
 ## Code Quality
 
 ### Frontend
