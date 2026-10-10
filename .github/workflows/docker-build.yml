@@ -107,7 +107,7 @@ jobs:
           --health-retries 10
 
     env:
-      DATABASE_URL: postgresql+psycopg2://musicvault:musicvault@localhost:5432/musicvault_test
+      TEST_DATABASE_URL: postgresql+psycopg2://musicvault:musicvault@localhost:5432/musicvault_test
       # Fail (instead of skip) the database tests if Postgres is unreachable.
       REQUIRE_TEST_DATABASE: "1"
 
