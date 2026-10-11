@@ -148,13 +148,7 @@ def test_search_track_rejects_blank_query():
     with pytest.raises(ValueError, match="empty query"):
         service.search_track("   ")
 
-#Mocked unit test for get_track()
-def test_get_track_rejects_empty_id():
-    service = SpotifyService(FAKE_TOKEN)
-
-    with pytest.raises(ValueError, match="track_id cannot be empty"):
-        service.get_track("")
-
+#Status resposne mocked test for get_track and get_artist 
 @patch("services.spotify_service.requests.get")
 def test_get_track_success(mock_get):
     mock_response = Mock()
@@ -191,5 +185,76 @@ def test_get_track_success(mock_get):
         headers={
             "Authorization": f"Bearer {FAKE_TOKEN}"
         },
+        params=None,
         timeout=10
     )
+#invalid track id test 
+def test_get_track_rejects_empty_id():
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(ValueError, match=" cannot be empty"):
+        service.get_track("")
+
+#404 response test for get_track 
+@patch("services.spotify_service.requests.get")
+def test_get_track_not_found(mock_get):
+    mock_response = Mock()
+    mock_response.status_code = 404
+
+    mock_get.return_value = mock_response
+
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(RuntimeError, match=" not found"):
+        service.get_track("invalid-track-id")
+
+#mocked test for get_artist
+@patch("services.spotify_service.requests.get")
+def test_get_artist_success(mock_get):
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "id": "artist123",
+        "name": "Eminem",
+        "external_urls": {
+            "spotify": "https://open.spotify.com/artist/example"
+        }
+    }
+
+    mock_get.return_value = mock_response
+
+    service = SpotifyService(FAKE_TOKEN)
+
+    result = service.get_artist("artist123")
+
+    assert result["id"] == "artist123"
+    assert result["name"] == "Eminem"
+
+    mock_get.assert_called_once_with(
+        "https://api.spotify.com/v1/artists/artist123",
+        headers={
+            "Authorization": f"Bearer {FAKE_TOKEN}"
+        },
+        params=None,
+        timeout=10
+    )
+
+#test invalid artist ID
+def test_get_artist_rejects_empty_id():
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(ValueError, match=" cannot be empty"):
+        service.get_artist("")
+
+#404 response test for get_artist
+@patch("services.spotify_service.requests.get")
+def test_get_artist_not_found(mock_get):
+    mock_response = Mock()
+    mock_response.status_code = 404
+
+    mock_get.return_value = mock_response
+
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(RuntimeError, match=" not found"):
+        service.get_artist("invalid-artist-id")
