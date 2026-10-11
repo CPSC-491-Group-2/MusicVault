@@ -24,6 +24,13 @@ def _unauthorized():
     )
 
 
+def forbidden():
+    """For a logged-in user asking for something that isn't theirs."""
+    return _error_response(
+        403, "Forbidden", "You do not have access to this resource."
+    )
+
+
 def login_required(view):
     """Reject the request with 401 unless the session holds a real user.
 

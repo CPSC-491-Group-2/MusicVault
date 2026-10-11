@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import uuid
 
 import pytest
 from sqlalchemy import event
@@ -23,6 +24,7 @@ if not _test_db_name.endswith("_test"):
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
 from app import create_app  # noqa: E402
+from db.queries.user import create_user, delete_user  # noqa: E402
 from db.session import SessionLocal, engine  # noqa: E402
 
 
@@ -31,6 +33,59 @@ def client():
     app = create_app()
     app.testing = True
     return app.test_client()
+
+
+@pytest.fixture
+def auth_app():
+    """An app with a SECRET_KEY, so it can sign session cookies."""
+    app = create_app()
+    app.testing = True
+    app.config.update(SECRET_KEY="test-secret-key")
+    return app
+
+
+@pytest.fixture
+def auth_client(auth_app):
+    return auth_app.test_client()
+
+
+@pytest.fixture
+def log_in(auth_client):
+    """Put a user in auth_client's session, the same way the OAuth callback does."""
+
+    def _log_in(user_id):
+        with auth_client.session_transaction() as sess:
+            sess["user_id"] = str(user_id)
+
+    return _log_in
+
+
+@pytest.fixture
+def make_db_user(require_live_database):
+    """Create committed users; each is deleted again after the test.
+
+    Routes open their own DB session, so test users have to be real commits
+    (not the SAVEPOINT-isolated db_session) for the routes to see them.
+    """
+    user_ids = []
+
+    def _make(display_name="Test User"):
+        with SessionLocal() as db:
+            user = create_user(
+                db, email=f"{uuid.uuid4()}@example.com", display_name=display_name
+            )
+        user_ids.append(user.id)
+        return user.id
+
+    yield _make
+    with SessionLocal() as db:
+        for user_id in user_ids:
+            delete_user(db, user_id)
+
+
+@pytest.fixture
+def db_user(make_db_user):
+    return make_db_user("Protected Test")
 
 
 @pytest.fixture
