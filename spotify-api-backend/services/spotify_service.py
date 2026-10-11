@@ -1,138 +1,106 @@
 import requests
 
 class SpotifyService:
-    def __init__(self, access_token:str):
+     def __init__(self, access_token:str):
         self.access_token = access_token
         self.headers = {
             "Authorization": f"Bearer {access_token}"
         }
         self.base_url = "https://api.spotify.com/v1"
-
-
+    
+     #handle request code function 
+     def _request(self, endpoint: str, params = None):
+          response = requests.get(
+               endpoint, 
+               headers=self.headers,
+               params = params,
+               timeout =10
+          )
+          if response.status_code == 200:
+               return response.json()
+          
+          if response.status_code == 401:
+               raise RuntimeError("Spotify Authentication Failed")
+                   
+          if response.status_code == 403:
+               raise RuntimeError("Spotify permission denied")
+                   
+          if response.status_code == 404:
+               raise RuntimeError("Spotify resource not found")
+                   
+          if response.status_code == 429:
+               raise RuntimeError("Spotify rate limit exceeded")
+                   
+          raise RuntimeError(
+               f"Spotify request failed with status {response.status_code}"
+          )
+     
     #retreive the current spotify user top track
-    def get_user_top_track( #refer to Get User's top item in spotify api documentation
-            self,
-            limit =20, #how many result spotify return 
-            time_range = "medium_term", #time frame using for compute
-            offset = 0 #index of first item to return
-    ):
+     def get_user_top_track( #refer to Get User's top item in spotify api documentation
+          self,
+          limit =20, #how many result spotify return 
+          time_range = "medium_term", #time frame using for compute
+          offset = 0 #index of first item to return
+          ):
         #validating parameters, make sure paramters was passed in correctly
-        if limit < 1 or limit > 50:
+          if limit < 1 or limit > 50:
                 raise ValueError("limit must be between 1 and 50")
-        valid_time_range ={
+          valid_time_range ={
              "short_term", "medium_term", "long_term"
-        }
-        if time_range not in valid_time_range:
+          }
+          if time_range not in valid_time_range:
              raise ValueError("time range invalid")
-        if offset <0:
+          if offset <0:
              raise ValueError("offset must be greater than 0")
-        #construct endpoint
-        endpoint = f"{self.base_url}/me/top/tracks"
+          #construct endpoint
+          endpoint = f"{self.base_url}/me/top/tracks"
 
-        #building query parameters for calling the api
-        params ={
+          #building query parameters for calling the api
+          params ={
              "limit": limit, 
              "time_range": time_range,
              "offset": offset
-        }
+          }
+        
+          #handle response 
+          return self._request(endpoint, params)
+      
+        
 
-        #GET Request
-        response = requests.get(
-             endpoint, 
-             headers = self.headers,
-             params = params,
-             timeout = 10
-        )
-        #handle response and return JSON
-        if response.status_code == 200:
-            return response.json()
-
-    def search_track(self, query: str, limit: int = 10):
+     def search_track(self, query: str, limit: int = 10):
          #validating query (no empty search allow)
-         if not query or not query.strip():
+          if not query or not query.strip():
               raise ValueError ("empty query")
 
          #validating limit
-         if limit < 1 or limit > 50:
+          if limit < 1 or limit > 50:
               raise ValueError("limit must be between 1 and 50")
          #build endpoint (Spotify endpoint for search is: /search)
-         endpoint = f"{self.base_url}/search"
+          endpoint = f"{self.base_url}/search"
 
          #build params
-         params = {
+          params = {
               "q": query,
               "type": "track",
               "limit": limit
-         }
+          }
 
-         #send GET request
-         response = requests.get(
-              endpoint, 
-              headers= self.headers,
-              params = params,
-              timeout = 10
-         )
          #handle response 
-         if response.status_code == 200:
-              return response.json()
+          return self._request(endpoint, params)
     
-    def get_track(self, track_id: str):
-         if not track_id or not track_id.strip():
+     def get_track(self, track_id: str):
+          if not track_id or not track_id.strip():
               raise ValueError("track_id cannot be empty")  
          
-         endpoint = f"{self.base_url}/tracks/{track_id}"
-
-         response = requests.get(
-              endpoint, 
-              headers = self.headers,
-              timeout = 10
-         )   
-          #Status response code 
-         if response.status_code == 200:
-              return response.json()
-         
-         if response.status_code == 401:
-              raise RuntimeError("Spotify Authentication Failed")
-         
-         if response.status_code == 403:
-               raise RuntimeError("Spotify permission denied")
-         
-         if response.status_code == 404:
-               raise RuntimeError("Spotify track not found")
-         
-         if response.status_code == 429:
-               raise RuntimeError("Spotify rate limit exceeded")
-         
-         raise RuntimeError(
-              f"Spotify request failed with status {response.status_code}"
-         )
+          endpoint = f"{self.base_url}/tracks/{track_id}"
+  
+          return self._request(endpoint)
     
-    def get_artist(self, artist_id: str):
-         if not artist_id or not artist_id.strip():
+     def get_artist(self, artist_id: str):
+          if not artist_id or not artist_id.strip():
               raise ValueError("artist_id cannot be empty")
-         endpoint = f"{self.base_url}/artists/{artist_id}"
+          endpoint = f"{self.base_url}/artists/{artist_id}"
 
-         response = requests.get(
-              endpoint, 
-              headers = self.headers,
-              timeout = 10
-         )
+          return self._request(endpoint)
 
-         if response.status_code == 200:
-              return response.json()
          
-         if response.status_code == 401:
-              raise RuntimeError("Spotify Authentication Failed")
-         
-         if response.status_code == 403:
-               raise RuntimeError("Spotify permission denied")
-         
-         if response.status_code == 404:
-               raise RuntimeError("Spotify artist not found")
-         
-         if response.status_code == 429:
-               raise RuntimeError("Spotify rate limit exceeded")
-         
-         raise RuntimeError(
-              f"Spotify request failed with status {response.status_code}"
-         )
