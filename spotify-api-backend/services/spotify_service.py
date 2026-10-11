@@ -86,9 +86,20 @@ class SpotifyService:
               headers = self.headers,
               timeout = 10
          )   
-
+          #Status response code 
          if response.status_code == 200:
               return response.json()
+         if response.status_code == 401:
+              return RuntimeError("Spotify Authentication Failed")
+         if response.status_code == 403:
+               return RuntimeError("Spotify permission denied")
+         if response.status_code == 404:
+               return RuntimeError("Spotify track not found")
+         if response.status_code == 429:
+               return RuntimeError("Spotify rate limit exceeded")
+         raise RuntimeError(
+              f"Spotify request failed with status {response.status_code}"
+         )
     def get_artist(self, artist_id: str):
          if not artist_id or not artist_id.strip():
               raise ValueError("artist_id cannot be empty")
