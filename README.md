@@ -122,6 +122,80 @@ MusicVault/
 
 The repository structure may change as MusicVault development continues.
 
+## Environment Variables
+
+Configuration and secrets are read from environment variables. Copy the template at the repository root and fill it in:
+
+```bash
+cp .env.example .env
+```
+
+`.env` is gitignored. Never commit real secrets, and never put them in `compose.yml`, a Dockerfile, or source code.
+
+| Variable | Required | Description |
+|---|---|---|
+| `SECRET_KEY` | For login | Signs the session cookie. Use a long random value (see below). |
+| `SPOTIFY_CLIENT_ID` | For login | Client ID from the Spotify Developer Dashboard. |
+| `SPOTIFY_CLIENT_SECRET` | For login | Client secret from the Spotify Developer Dashboard. Only the backend uses it. |
+| `SPOTIFY_REDIRECT_URI` | For login | Callback URL. Must exactly match one registered in the Spotify dashboard. |
+| `FRONTEND_URL` | No | Where users land after login, and the allowed CORS origin. Defaults to `http://localhost:3000`. |
+| `SESSION_COOKIE_SECURE` | No | Set to `True` when the site is served over HTTPS. Defaults to `False`. |
+| `DATABASE_URL` | No | PostgreSQL connection string. Defaults to a local `musicvault` database. |
+
+Generate a `SECRET_KEY`:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+The backend reads `.env` automatically when started with `python run.py`. Docker Compose reads the same file and passes the values to the backend container, so they never end up in the image.
+
+If the Spotify variables or `SECRET_KEY` are missing, the rest of the backend still runs, and the login routes return `503 Service Unavailable`.
+
+## Spotify Login Setup
+
+MusicVault signs users in with Spotify using the OAuth authorization code flow.
+
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and create an app (or ask a teammate for access to the team's app).
+2. In the app settings, add this redirect URI:
+
+   ```text
+   http://127.0.0.1:3000/api/auth/spotify/callback
+   ```
+
+3. Copy the client ID and client secret into `.env`, and set:
+
+   ```text
+   SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/api/auth/spotify/callback
+   FRONTEND_URL=http://127.0.0.1:3000
+   ```
+
+4. Start the backend and frontend, then open `http://127.0.0.1:3000` and click **Log in with Spotify**.
+
+Use `127.0.0.1`, not `localhost`, everywhere. Spotify does not accept `localhost` redirect URIs, and the login session cookie is tied to the exact host, so opening the site on `localhost` would lose it partway through login.
+
+Spotify apps start in Development Mode, where only users added under **User Management** in the dashboard can log in.
+
+### How login works
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/auth/spotify/login` | Redirects the user to Spotify to approve access. |
+| `GET /api/auth/spotify/callback` | Spotify redirects back here. The backend finishes login and redirects to `FRONTEND_URL`. |
+
+- **State/CSRF protection:** `/login` generates a random `state` value and stores it in a signed, HttpOnly session cookie. `/callback` only continues if Spotify returns the same value. Each `state` can be used once.
+- **Client secret:** used only in the backend's server-to-server request to Spotify. It is never sent to the browser.
+- **Redirect URI:** always taken from `SPOTIFY_REDIRECT_URI`, never from the request.
+- **Accounts** are matched by Spotify user ID, not email, since Spotify does not guarantee that emails are verified.
+
+If login fails, the user is sent back to the frontend with an `auth_error` query parameter:
+
+| `auth_error` | Meaning |
+|---|---|
+| `access_denied` | The user declined on Spotify's consent screen. |
+| `invalid_state` | The `state` was missing, wrong, or already used. Starting login again fixes it. |
+| `spotify_error` | Spotify returned an error or could not be reached. |
+
 ## Running the Backend
 
 Navigate to the backend directory:
