@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 
 from flask import Blueprint, current_app, jsonify, redirect, request, session
 
+from app.auth import SESSION_USER_KEY
 from app.services.spotify_auth import (
     SpotifyAuthError,
     build_authorize_url,
@@ -118,5 +119,13 @@ def spotify_callback():
 
     # Start a fresh session on login so nothing set before it carries over.
     session.clear()
-    session["user_id"] = user_id
+    session[SESSION_USER_KEY] = user_id
     return _redirect_to_frontend()
+
+
+@auth_bp.post("/logout")
+def logout():
+    # POST only, so a link or image on another site can't log the user out;
+    # SameSite=Lax also keeps the cookie off cross-site POSTs.
+    session.clear()
+    return "", 204
