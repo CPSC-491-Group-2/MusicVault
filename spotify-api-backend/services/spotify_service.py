@@ -113,3 +113,14 @@ class SpotifyService:
 
          if response.status_code == 200:
               return response.json()
+         if response.status_code == 401:
+              return RuntimeError("Spotify Authentication Failed")
+         if response.status_code == 403:
+               return RuntimeError("Spotify permission denied")
+         if response.status_code == 404:
+               return RuntimeError("Spotify track not found")
+         if response.status_code == 429:
+               return RuntimeError("Spotify rate limit exceeded")
+         raise RuntimeError(
+              f"Spotify request failed with status {response.status_code}"
+         )
