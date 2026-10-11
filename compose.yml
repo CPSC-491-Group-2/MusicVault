@@ -14,6 +14,10 @@ services:
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
       SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-}
+      # localhost here is the container itself; point this at the database's
+      # host or its container name on the musicvault network. Defaults to the
+      # same URL as db/session.py so the backend still starts when unset.
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://localhost:5432/musicvault}
     networks:
       - musicvault
     ports:
