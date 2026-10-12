@@ -12,7 +12,7 @@ class TrackMetadata:
     duration_ms: int
     explicit: bool
     spotify_url: str|None
-
+    #can add images of the track cover images as part of the data
 
 @dataclass
 class ArtistMetadata:
@@ -21,6 +21,6 @@ class ArtistMetadata:
         genres: list[str]
         popularity: int|None
         spotify_url:str|None
-
+    # can add artist's avatar images as part of the data 
 
     
