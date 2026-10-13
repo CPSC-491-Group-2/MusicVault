@@ -31,7 +31,7 @@ MusicVault aims to provide users with a personalized music discovery experience.
 - Next.js
 - React
 - TypeScript
-- ESLint
+- oxlint
 
 ### Backend
 
@@ -141,6 +141,7 @@ cp .env.example .env
 | `FRONTEND_URL` | No | Where users land after login, and the allowed CORS origin. Defaults to `http://localhost:3000`. |
 | `SESSION_COOKIE_SECURE` | No | Set to `True` when the site is served over HTTPS. Defaults to `False`. |
 | `DATABASE_URL` | No | PostgreSQL connection string. Defaults to a local `musicvault` database. |
+| `TEST_DATABASE_URL` | Tests only | Database the backend tests use. Must end in `_test`. Defaults to a local `musicvault_test` database. See [Running Backend Tests](#running-backend-tests). |
 
 Generate a `SECRET_KEY`:
 
@@ -151,6 +152,29 @@ python -c "import secrets; print(secrets.token_hex(32))"
 The backend reads `.env` automatically when started with `python run.py`. Docker Compose reads the same file and passes the values to the backend container, so they never end up in the image.
 
 If the Spotify variables or `SECRET_KEY` are missing, the rest of the backend still runs, and the login routes return `503 Service Unavailable`.
+
+### Production Values
+
+Production does not use a `.env` file. The values are shared through the repository's `production` GitHub environment, under **Settings > Environments > production**, and the Deploy workflow passes them to Docker Compose when it starts the containers.
+
+Add these as environment **secrets**:
+
+| Secret | Description |
+|---|---|
+| `SECRET_KEY` | A different value from the one used locally. |
+| `DATABASE_URL` | Connection string for the production database. |
+| `SPOTIFY_CLIENT_ID` | Client ID of the Spotify app used in production. |
+| `SPOTIFY_CLIENT_SECRET` | Client secret of that same app. |
+
+Add these as environment **variables**, since they are not sensitive:
+
+| Variable | Description |
+|---|---|
+| `FRONTEND_URL` | Public URL of the deployed site. |
+| `SPOTIFY_REDIRECT_URI` | Production callback URL. Register it in the Spotify dashboard too. |
+| `SESSION_COOKIE_SECURE` | `True` once the site is served over HTTPS. |
+
+All seven are required. Deploy stops before pulling images if any of them is missing, rather than shipping a build whose login is quietly broken. Secrets are masked in the workflow logs and are never written to the runner's disk.
 
 ## Spotify Login Setup
 
@@ -182,6 +206,7 @@ Spotify apps start in Development Mode, where only users added under **User Mana
 |---|---|
 | `GET /api/auth/spotify/login` | Redirects the user to Spotify to approve access. |
 | `GET /api/auth/spotify/callback` | Spotify redirects back here. The backend finishes login and redirects to `FRONTEND_URL`. |
+| `POST /api/auth/spotify/logout` | Ends the session. Returns `204 No Content`. |
 
 - **State/CSRF protection:** `/login` generates a random `state` value and stores it in a signed, HttpOnly session cookie. `/callback` only continues if Spotify returns the same value. Each `state` can be used once.
 - **Client secret:** used only in the backend's server-to-server request to Spotify. It is never sent to the browser.
@@ -195,6 +220,26 @@ If login fails, the user is sent back to the frontend with an `auth_error` query
 | `access_denied` | The user declined on Spotify's consent screen. |
 | `invalid_state` | The `state` was missing, wrong, or already used. Starting login again fixes it. |
 | `spotify_error` | Spotify returned an error or could not be reached. |
+
+### Protected routes
+
+Routes that need a logged-in user use the `login_required` decorator from `app/auth.py`. It reads the user from the signed session cookie set at login, and the view can use that user as `g.current_user`. Anything else gets `401 Unauthorized`:
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "You must be logged in to access this resource."
+}
+```
+
+This includes a missing, unsigned, or tampered cookie, and a session for a user that has since been deleted.
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/v1/me` | Returns the logged-in user. |
+| `GET /api/v1/users/{id}` | Returns the user only if `{id}` is the logged-in user. Any other ID gets `403 Forbidden`, including IDs that don't exist, so the route can't be used to discover accounts. |
+
+On a flask-smorest `MethodView`, protect every method with `decorators = [login_required]`.
 
 ## Running the Backend
 
@@ -356,18 +401,17 @@ cd backend
 pip install -r requirements-dev.txt
 ```
 
-Create the test database and apply the schema (one-time setup):
-
-```bash
-createdb musicvault_test
-psql -d musicvault_test -f DDL/initial_schema.sql
-```
-
-Run the tests from the `backend` directory:
+You only need a running PostgreSQL server. Run the tests from the `backend` directory:
 
 ```bash
 python -m pytest
 ```
+
+There's no manual database setup. On each run, pytest:
+
+1. Creates the test database if it doesn't exist yet.
+2. Drops all its tables and rebuilds them from `DDL/initial_schema.sql`, so leftovers from an earlier (or crashed) run are gone and the schema always matches the DDL.
+3. Resets data after every database test. Tests using `db_session` are rolled back. Tests whose rows are really committed (for example, through an API route) use the `clean_database` fixture, which empties every table afterwards.
 
 By default the tests connect to:
 
@@ -375,25 +419,42 @@ By default the tests connect to:
 postgresql+psycopg2://localhost:5432/musicvault_test
 ```
 
-To use a different user, password, or port, set `TEST_DATABASE_URL`:
+The database credentials come from the `TEST_DATABASE_URL` environment variable. pytest does not read `.env`, so set it in your shell to use a different user, password, or port:
 
 ```bash
-TEST_DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/musicvault_test python -m pytest
+export TEST_DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/musicvault_test
+python -m pytest
 ```
 
-If no test database is reachable, the database tests are skipped and the rest still run.
+The database user needs permission to create databases (`CREATEDB`), or the test database must already exist and be owned by that user.
 
-GitHub Actions runs the same tests on every pull request and push to `master`, using a temporary PostgreSQL database that is discarded after each run. A failing test fails the workflow.
+If no PostgreSQL server is reachable, the database tests are skipped and the rest still run.
+
+GitHub Actions runs the same tests on every pull request and push to `master`, against a temporary PostgreSQL server that is discarded after each run. pytest creates the test database and schema there the same way it does locally. A failing test fails the workflow.
+
+The tests never need real Spotify credentials or a network connection. Spotify's endpoints are faked, and configuration uses placeholder values.
+
+| Test file | Covers |
+|---|---|
+| `test_spotify_oauth.py` | Login and callback: happy path, state/CSRF validation, Spotify-side failures |
+| `test_protected_routes.py` | `login_required` on every protected route: unauthorized, tampered sessions, deleted users. Also `/me` and logout |
+| `test_user_routes.py` | `/users/{id}`: own account allowed; other and nonexistent accounts forbidden |
+| `test_config.py` | Secrets read from environment variables with no hardcoded fallbacks, and login returning `503` when any required variable is missing or empty |
+| `test_database_framework.py` | The test database setup itself: schema built from the DDL, committed rows reset between tests, `db_session` rolled back, non-`_test` databases refused |
+
+The same workflow also runs [gitleaks](https://github.com/gitleaks/gitleaks) over the branch's full history, and fails if a secret has been committed.
 
 ## Code Quality
 
 ### Frontend
 
-Run ESLint:
+Run oxlint:
 
 ```bash
 npm run lint
 ```
+
+Rules live in `frontend/.oxlintrc.json`. Warnings fail the run just like errors, and GitHub Actions runs this on every pull request.
 
 ### Backend
 
