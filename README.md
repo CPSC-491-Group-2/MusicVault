@@ -152,6 +152,29 @@ The backend reads `.env` automatically when started with `python run.py`. Docker
 
 If the Spotify variables or `SECRET_KEY` are missing, the rest of the backend still runs, and the login routes return `503 Service Unavailable`.
 
+### Production Values
+
+Production does not use a `.env` file. The values are shared through the repository's `production` GitHub environment, under **Settings > Environments > production**, and the Deploy workflow passes them to Docker Compose when it starts the containers.
+
+Add these as environment **secrets**:
+
+| Secret | Description |
+|---|---|
+| `SECRET_KEY` | A different value from the one used locally. |
+| `DATABASE_URL` | Connection string for the production database. |
+| `SPOTIFY_CLIENT_ID` | Client ID of the Spotify app used in production. |
+| `SPOTIFY_CLIENT_SECRET` | Client secret of that same app. |
+
+Add these as environment **variables**, since they are not sensitive:
+
+| Variable | Description |
+|---|---|
+| `FRONTEND_URL` | Public URL of the deployed site. |
+| `SPOTIFY_REDIRECT_URI` | Production callback URL. Register it in the Spotify dashboard too. |
+| `SESSION_COOKIE_SECURE` | `True` once the site is served over HTTPS. |
+
+All seven are required. Deploy stops before pulling images if any of them is missing, rather than shipping a build whose login is quietly broken. Secrets are masked in the workflow logs and are never written to the runner's disk.
+
 ## Spotify Login Setup
 
 MusicVault signs users in with Spotify using the OAuth authorization code flow.
