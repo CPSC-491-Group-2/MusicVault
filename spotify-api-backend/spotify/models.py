@@ -6,6 +6,7 @@ class TrackMetadata:
     spotify_id: str 
     name: str
     artists: list[str]
+    artist_ids: list[str]
     album_name: str|None
     album_id: str|None 
     release_date: str
@@ -13,7 +14,7 @@ class TrackMetadata:
     explicit: bool
     spotify_url: str|None
     #can add images of the track cover images as part of the data
-
+    image_url: str|None
 @dataclass
 class ArtistMetadata:
         spotify_id: str
