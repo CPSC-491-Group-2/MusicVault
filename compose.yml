@@ -11,7 +11,7 @@ services:
     # Secrets stay out of the image and out of this file.
     environment:
       SECRET_KEY: ${SECRET_KEY:-}
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://localhost:5432/musicvault}
+      # DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://localhost:5432/musicvault}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-False}
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
