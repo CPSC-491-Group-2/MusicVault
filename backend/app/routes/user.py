@@ -1,9 +1,9 @@
+from flask import g
 from flask.views import MethodView
-from flask_smorest import Blueprint, abort
+from flask_smorest import Blueprint
 
+from app.auth import forbidden, login_required
 from app.schemas.user import UserResponseSchema
-from db.queries.user import get_user_by_id
-from db.session import SessionLocal
 
 user_bp = Blueprint(
     "users",
@@ -14,13 +14,27 @@ user_bp = Blueprint(
 
 @user_bp.route("/users/<uuid:user_id>")
 class UserResource(MethodView):
+    decorators = [login_required]
 
     @user_bp.response(200, UserResponseSchema)
+    @user_bp.alt_response(401, description="Not logged in")
+    @user_bp.alt_response(403, description="Not the logged-in user's account")
     def get(self, user_id):
-        with SessionLocal() as db:
-            user = get_user_by_id(db, user_id)
+        # Users can only read their own account. Any other ID gets 403, even
+        # one that doesn't exist, so this can't be used to probe for accounts.
+        if user_id != g.current_user.id:
+            return forbidden()
 
-        if user is None:
-            abort(404, message="User not found")
+        return g.current_user
 
-        return user
+
+@user_bp.route("/me")
+class CurrentUserResource(MethodView):
+    # Runs before flask-smorest's response handling, so a 401 short-circuits
+    # without touching the view.
+    decorators = [login_required]
+
+    @user_bp.response(200, UserResponseSchema)
+    @user_bp.alt_response(401, description="Not logged in")
+    def get(self):
+        return g.current_user
