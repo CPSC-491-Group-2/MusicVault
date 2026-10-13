@@ -1,17 +1,9 @@
-import Navbar from "../../components/Navbar";
+import { AppShell } from "@/components/shell/AppShell";
 
 export default function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <>
-      <Navbar />
-
-      <main>
-        {children}
-      </main>
-    </>
-  );
+  return <AppShell>{children}</AppShell>;
 }
