@@ -31,7 +31,7 @@ MusicVault aims to provide users with a personalized music discovery experience.
 - Next.js
 - React
 - TypeScript
-- ESLint
+- oxlint
 
 ### Backend
 
@@ -389,11 +389,13 @@ GitHub Actions runs the same tests on every pull request and push to `master`, u
 
 ### Frontend
 
-Run ESLint:
+Run oxlint:
 
 ```bash
 npm run lint
 ```
+
+Rules live in `frontend/.oxlintrc.json`. Warnings fail the run just like errors, and GitHub Actions runs this on every pull request.
 
 ### Backend
 
