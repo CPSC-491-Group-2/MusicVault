@@ -1,24 +1,187 @@
 from __future__ import annotations
 
+import os
+import uuid
+from pathlib import Path
+
 import pytest
-from sqlalchemy import event
+from sqlalchemy import create_engine, event, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 
-from db.session import SessionLocal, engine
+# Tests write real rows (e.g. test_user_routes commits a user), so they must
+# never run against the dev database. They read TEST_DATABASE_URL instead of
+# DATABASE_URL, and refuse to start unless the database name ends in "_test".
+# This has to happen before db.session is imported, since it builds the engine.
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL", "postgresql+psycopg2://localhost:5432/musicvault_test"
+)
+_test_db_name = make_url(TEST_DATABASE_URL).database or ""
+if not _test_db_name.endswith("_test"):
+    raise pytest.UsageError(
+        "Refusing to run tests: TEST_DATABASE_URL must point at a database whose "
+        f"name ends in '_test' (got {_test_db_name!r})."
+    )
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+
+from app import create_app  # noqa: E402
+from db.queries.user import create_user  # noqa: E402
+from db.session import SessionLocal, engine  # noqa: E402
 
 
 @pytest.fixture
-def db_session():
+def client():
+    app = create_app()
+    app.testing = True
+    return app.test_client()
+
+
+@pytest.fixture
+def auth_app():
+    """An app with a SECRET_KEY, so it can sign session cookies."""
+    app = create_app()
+    app.testing = True
+    app.config.update(SECRET_KEY="test-secret-key")
+    return app
+
+
+@pytest.fixture
+def auth_client(auth_app):
+    return auth_app.test_client()
+
+
+@pytest.fixture
+def log_in(auth_client):
+    """Put a user in auth_client's session, the same way the OAuth callback does."""
+
+    def _log_in(user_id):
+        with auth_client.session_transaction() as sess:
+            sess["user_id"] = str(user_id)
+
+    return _log_in
+
+
+@pytest.fixture
+def make_db_user(clean_database):
+    """Create committed users; clean_database removes them after the test.
+
+    Routes open their own DB session, so test users have to be real commits
+    (not the SAVEPOINT-isolated db_session) for the routes to see them.
+    """
+
+    def _make(display_name="Test User"):
+        with SessionLocal() as db:
+            user = create_user(
+                db, email=f"{uuid.uuid4()}@example.com", display_name=display_name
+            )
+        return user.id
+
+    return _make
+
+
+@pytest.fixture
+def db_user(make_db_user):
+    return make_db_user("Protected Test")
+
+
+SCHEMA_FILE = Path(__file__).parent / "DDL" / "initial_schema.sql"
+
+
+def _create_test_database_if_missing():
+    """Create the _test database through the server's "postgres" database.
+
+    Only tried when connecting to the test database itself fails, so a user
+    without access to "postgres" can still use a test database that exists.
+    """
+    try:
+        engine.connect().close()
+        return
+    except OperationalError as original_error:
+        url = make_url(TEST_DATABASE_URL)
+        admin_engine = create_engine(
+            url.set(database="postgres"), isolation_level="AUTOCOMMIT"
+        )
+        try:
+            with admin_engine.connect() as connection:
+                exists = connection.scalar(
+                    text("SELECT 1 FROM pg_database WHERE datname = :name"),
+                    {"name": url.database},
+                )
+                if exists:
+                    raise original_error
+                quoted = connection.dialect.identifier_preparer.quote(url.database)
+                connection.exec_driver_sql(f"CREATE DATABASE {quoted}")
+        except OperationalError:
+            raise original_error
+        finally:
+            admin_engine.dispose()
+
+
+def _rebuild_schema():
+    """Drop everything in the test database and recreate it from the DDL.
+
+    Safe only because the "_test" name check above has already run.
+    """
+    with engine.begin() as connection:
+        connection.exec_driver_sql("DROP SCHEMA IF EXISTS public CASCADE")
+        connection.exec_driver_sql("CREATE SCHEMA public")
+        connection.exec_driver_sql(SCHEMA_FILE.read_text())
+
+
+@pytest.fixture(scope="session")
+def test_database():
+    """Create the test database if needed and rebuild its schema, once per run.
+
+    Leftover rows from an earlier (possibly crashed) run are wiped, and the
+    tables always match DDL/initial_schema.sql.
+    """
+    try:
+        _create_test_database_if_missing()
+        _rebuild_schema()
+    except OperationalError as exc:
+        message = f"No live database reachable at TEST_DATABASE_URL: {exc}"
+        if os.environ.get("REQUIRE_TEST_DATABASE"):
+            pytest.fail(message)
+        pytest.skip(message)
+
+
+@pytest.fixture
+def require_live_database(test_database):
+    """Skip the test cleanly if TEST_DATABASE_URL isn't reachable.
+
+    CI sets REQUIRE_TEST_DATABASE so a missing database fails the job instead
+    of silently skipping every account/database test.
+    """
+
+
+@pytest.fixture
+def clean_database(require_live_database):
+    """Empty every table after the test.
+
+    For tests whose rows are really committed (e.g. by a route's own
+    session), which the db_session rollback can't undo. Tables are looked up
+    at teardown, so new tables in the DDL are covered automatically.
+    """
+    yield
+    with engine.begin() as connection:
+        tables = connection.scalars(
+            text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+        ).all()
+        if tables:
+            quote = connection.dialect.identifier_preparer.quote
+            names = ", ".join(quote(table) for table in tables)
+            connection.exec_driver_sql(f"TRUNCATE {names} RESTART IDENTITY CASCADE")
+
+
+@pytest.fixture
+def db_session(require_live_database):
     """A Session bound to a SAVEPOINT that is rolled back after each test.
 
     Query functions call db.commit(); wrapping the connection in an outer
     transaction and restarting a SAVEPOINT after every commit keeps each
     test isolated without needing to touch the query functions themselves.
     """
-    try:
-        connection = engine.connect()
-    except OperationalError as exc:
-        pytest.skip(f"No live database reachable at DATABASE_URL: {exc}")
+    connection = engine.connect()
     outer_transaction = connection.begin()
     session = SessionLocal(bind=connection)
     session.begin_nested()

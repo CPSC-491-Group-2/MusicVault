@@ -17,3 +17,12 @@ node_modules/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# AI tooling
+.omo/
+.codegraph
+.playwright-mcp/
+.claude/
+.opencode/
+.cursor/
+.aider*

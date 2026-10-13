@@ -4,7 +4,10 @@ from flask_smorest import Api
 
 from app.config import Config
 from app.errors.handlers import register_error_handlers
+from app.routes.auth import auth_bp
 from app.routes.health import health_bp
+from app.routes.user import user_bp
+from app.routes.spotify import spotify_bp
 
 
 def create_app():
@@ -22,6 +25,21 @@ def create_app():
     api.register_blueprint(
         health_bp,
         url_prefix="/api/v1",
+    )
+
+    api.register_blueprint(
+        user_bp,
+        url_prefix="/api/v1",
+    )
+
+    api.register_blueprint(
+    spotify_bp,
+    url_prefix="/api/v1",
+    )
+
+    app.register_blueprint(
+        auth_bp,
+        url_prefix="/api/auth/spotify",
     )
 
     register_error_handlers(app)

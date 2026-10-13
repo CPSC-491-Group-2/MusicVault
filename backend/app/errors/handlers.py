@@ -15,6 +15,18 @@ def register_error_handlers(app):
             404,
         )
 
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        return (
+            jsonify(
+                {
+                    "error": "Method Not Allowed",
+                    "message": "The requested method is not allowed for this resource.",
+                }
+            ),
+            405,
+        )
+
     @app.errorhandler(500)
     def internal_server_error(error):
         return (

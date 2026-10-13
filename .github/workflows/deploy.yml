@@ -21,8 +21,31 @@ jobs:
     # workflow_run also fires for failed builds; only ship green ones.
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: [self-hosted, prod-1]
+    # Secrets and variables are read from this environment's settings.
+    environment: production
+
+    # compose.yml interpolates these, so nothing lands on the runner's disk.
+    env:
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+      SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      SPOTIFY_REDIRECT_URI: ${{ vars.SPOTIFY_REDIRECT_URI }}
+      SESSION_COOKIE_SECURE: ${{ vars.SESSION_COOKIE_SECURE }}
 
     steps:
+      # Missing values otherwise deploy fine and break later, at login.
+      - name: Check deploy configuration
+        run: |
+          : "${SECRET_KEY:?is not set in the production environment}"
+          : "${DATABASE_URL:?is not set in the production environment}"
+          : "${SPOTIFY_CLIENT_ID:?is not set in the production environment}"
+          : "${SPOTIFY_CLIENT_SECRET:?is not set in the production environment}"
+          : "${SPOTIFY_REDIRECT_URI:?is not set in the production environment}"
+          : "${FRONTEND_URL:?is not set in the production environment}"
+          : "${SESSION_COOKIE_SECURE:?is not set in the production environment}"
+
       # Checked out for compose.yml, pinned to the commit that was built.
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,15 +72,34 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           docker compose pull
-          docker compose up -d --no-build
+          # --wait blocks until healthchecks pass or fails the step.
+          docker compose up -d --no-build --wait --wait-timeout 120
           docker image prune -f
 
-      - name: Health check
+      - name: Deployment status
+        if: always()
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          for i in $(seq 1 15); do
-            # Goes through the frontend proxy, so both services are checked.
-            curl -fsS http://localhost:3000/api/v1/health && exit 0
-            sleep 2
-          done
-          docker compose logs --tail 50
-          exit 1
+          host=$(hostname -I | awk '{print $1}')
+          {
+            echo "## Deployment: \`$TAG\`"
+            echo
+            echo "| Service | State | Health | Ports | Live |"
+            echo "|---|---|---|---|---|"
+            for pair in backend:5000 frontend:3000; do
+              svc=${pair%:*} port=${pair#*:}
+              id=$(docker compose ps -q "$svc")
+              state=$([ -n "$id" ] && docker inspect -f '{{.State.Status}}' "$id" || echo missing)
+              health=$([ -n "$id" ] && docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$id" || true)
+              # Frontend hits the same path through its /api proxy.
+              live=$(curl -fsS -o /dev/null --max-time 5 "http://localhost:$port/api/v1/health" && echo "✅" || echo "❌")
+              echo "| $svc | $state | ${health:--} | http://$host:$port | $live |"
+            done
+            echo
+            echo "Network: \`$(docker network inspect musicvault -f '{{range .Containers}}{{.Name}} {{end}}')\`"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail 100
