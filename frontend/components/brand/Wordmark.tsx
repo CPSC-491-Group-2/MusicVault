@@ -1,3 +1,4 @@
+// oxlint-disable jsx-a11y/prefer-tag-over-role -- an img tag cannot fill the paths separately
 type WordmarkProps = {
   className?: string;
   theme: "light" | "dark";
