@@ -23,6 +23,7 @@ SCHEMA_TABLES = {
     "recommendations",
     "charts",
     "chart_entries",
+    "user_top_songs",
 }
 
 
