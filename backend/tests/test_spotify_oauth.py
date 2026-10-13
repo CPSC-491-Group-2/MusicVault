@@ -193,6 +193,23 @@ def test_callback_logs_in_new_user(oauth_client, spotify, cleanup_users):
         assert session_user_id(oauth_client) == str(account.user_id)
 
 
+def test_login_grants_access_to_protected_routes(oauth_client, spotify, cleanup_users):
+    cleanup_users[0].append(spotify.spotify_id)
+    assert oauth_client.get("/api/v1/me").status_code == 401
+
+    oauth_client.get(f"{CALLBACK}?code=auth-code&state={start_login(oauth_client)}")
+    response = oauth_client.get("/api/v1/me")
+
+    assert response.status_code == 200
+    assert response.get_json()["display_name"] == "OAuth Tester"
+
+
+def test_failed_login_does_not_grant_access(oauth_client, spotify):
+    oauth_client.get(f"{CALLBACK}?code=auth-code&state=forged")
+
+    assert oauth_client.get("/api/v1/me").status_code == 401
+
+
 def test_callback_state_cannot_be_replayed(oauth_client, spotify, cleanup_users):
     cleanup_users[0].append(spotify.spotify_id)
     state = start_login(oauth_client)
@@ -364,3 +381,73 @@ def test_routes_refuse_to_run_without_config(app, missing, path):
 
     assert response.status_code == 503
     assert response.get_json()["message"] == "Spotify login is not configured."
+# --- refresh token ---------------------------------------------------------
+
+
+def test_refresh_access_token_success(monkeypatch):
+    requests_made = []
+
+    def fake_post(url, **kwargs):
+        requests_made.append((url, kwargs))
+        return FakeResponse(
+            200,
+            {
+                "access_token": "new-access-token",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "user-read-email",
+            },
+        )
+
+    monkeypatch.setattr(spotify_auth.requests, "post", fake_post)
+
+    token = spotify_auth.refresh_access_token(
+        refresh_token="refresh-123",
+        client_id="test-client-id",
+        client_secret=CLIENT_SECRET,
+    )
+
+    assert token["access_token"] == "new-access-token"
+
+    url, kwargs = requests_made[0]
+    assert url == spotify_auth.TOKEN_URL
+    assert kwargs["data"] == {
+        "grant_type": "refresh_token",
+        "refresh_token": "refresh-123",
+    }
+    assert kwargs["auth"] == ("test-client-id", CLIENT_SECRET)
+    assert kwargs["timeout"] == spotify_auth.REQUEST_TIMEOUT
+
+
+def test_refresh_access_token_rejected(monkeypatch):
+    def fake_post(url, **kwargs):
+        return FakeResponse(400, {"error": "invalid_grant"})
+
+    monkeypatch.setattr(spotify_auth.requests, "post", fake_post)
+
+    with pytest.raises(
+        spotify_auth.SpotifyAuthError,
+        match=r"Token refresh failed \(400\)",
+    ):
+        spotify_auth.refresh_access_token(
+            refresh_token="bad-refresh-token",
+            client_id="test-client-id",
+            client_secret=CLIENT_SECRET,
+        )
+
+
+def test_refresh_access_token_spotify_unreachable(monkeypatch):
+    def fake_post(url, **kwargs):
+        raise requests.ConnectionError("network down")
+
+    monkeypatch.setattr(spotify_auth.requests, "post", fake_post)
+
+    with pytest.raises(
+        spotify_auth.SpotifyAuthError,
+        match="Could not reach Spotify token endpoint",
+    ):
+        spotify_auth.refresh_access_token(
+            refresh_token="refresh-123",
+            client_id="test-client-id",
+            client_secret=CLIENT_SECRET,
+        )
