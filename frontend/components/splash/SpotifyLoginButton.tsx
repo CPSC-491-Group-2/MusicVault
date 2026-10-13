@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/Button";
 import { SPOTIFY_LOGIN_URL } from "@/lib/auth";
 
 type SpotifyLoginButtonProps = {
@@ -5,29 +6,21 @@ type SpotifyLoginButtonProps = {
   className?: string;
 };
 
-const SIZE_CLASSES: Record<SpotifyLoginButtonProps["size"], string> = {
-  sm: "text-base px-5 py-[11px] rounded-[10px]",
-  lg: "text-lg px-7 py-[17px] rounded-xl",
-};
-
+// external: the login URL is an /api proxy route to Flask, not a page, so a
+// next Link would prefetch it and start a real OAuth handshake on scroll.
 export default function SpotifyLoginButton({
   size,
   className,
 }: SpotifyLoginButtonProps) {
   return (
-    <a
+    <Button
+      variant="primary"
+      size={size}
       href={SPOTIFY_LOGIN_URL}
-      className={[
-        "inline-block bg-olive text-blush font-medium",
-        "hover:bg-green focus-visible:bg-green",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-olive",
-        SIZE_CLASSES[size],
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      external
+      className={className}
     >
       Log in with Spotify
-    </a>
+    </Button>
   );
 }
