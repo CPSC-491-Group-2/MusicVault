@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 import uuid
+from pathlib import Path
 
 import pytest
-from sqlalchemy import event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 
@@ -88,22 +89,74 @@ def db_user(make_db_user):
     return make_db_user("Protected Test")
 
 
-@pytest.fixture
-def require_live_database():
-    """Skip the test cleanly if TEST_DATABASE_URL isn't reachable.
+SCHEMA_FILE = Path(__file__).parent / "DDL" / "initial_schema.sql"
 
-    CI sets REQUIRE_TEST_DATABASE so a missing database fails the job instead
-    of silently skipping every account/database test.
+
+def _create_test_database_if_missing():
+    """Create the _test database through the server's "postgres" database.
+
+    Only tried when connecting to the test database itself fails, so a user
+    without access to "postgres" can still use a test database that exists.
     """
     try:
-        connection = engine.connect()
+        engine.connect().close()
+        return
+    except OperationalError as original_error:
+        url = make_url(TEST_DATABASE_URL)
+        admin_engine = create_engine(
+            url.set(database="postgres"), isolation_level="AUTOCOMMIT"
+        )
+        try:
+            with admin_engine.connect() as connection:
+                exists = connection.scalar(
+                    text("SELECT 1 FROM pg_database WHERE datname = :name"),
+                    {"name": url.database},
+                )
+                if exists:
+                    raise original_error
+                quoted = connection.dialect.identifier_preparer.quote(url.database)
+                connection.exec_driver_sql(f"CREATE DATABASE {quoted}")
+        except OperationalError:
+            raise original_error
+        finally:
+            admin_engine.dispose()
+
+
+def _rebuild_schema():
+    """Drop everything in the test database and recreate it from the DDL.
+
+    Safe only because the "_test" name check above has already run.
+    """
+    with engine.begin() as connection:
+        connection.exec_driver_sql("DROP SCHEMA IF EXISTS public CASCADE")
+        connection.exec_driver_sql("CREATE SCHEMA public")
+        connection.exec_driver_sql(SCHEMA_FILE.read_text())
+
+
+@pytest.fixture(scope="session")
+def test_database():
+    """Create the test database if needed and rebuild its schema, once per run.
+
+    Leftover rows from an earlier (possibly crashed) run are wiped, and the
+    tables always match DDL/initial_schema.sql.
+    """
+    try:
+        _create_test_database_if_missing()
+        _rebuild_schema()
     except OperationalError as exc:
         message = f"No live database reachable at TEST_DATABASE_URL: {exc}"
         if os.environ.get("REQUIRE_TEST_DATABASE"):
             pytest.fail(message)
         pytest.skip(message)
-    else:
-        connection.close()
+
+
+@pytest.fixture
+def require_live_database(test_database):
+    """Skip the test cleanly if TEST_DATABASE_URL isn't reachable.
+
+    CI sets REQUIRE_TEST_DATABASE so a missing database fails the job instead
+    of silently skipping every account/database test.
+    """
 
 
 @pytest.fixture
