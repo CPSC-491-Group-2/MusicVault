@@ -25,7 +25,7 @@ if not _test_db_name.endswith("_test"):
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
 from app import create_app  # noqa: E402
-from db.queries.user import create_user, delete_user  # noqa: E402
+from db.queries.user import create_user  # noqa: E402
 from db.session import SessionLocal, engine  # noqa: E402
 
 
@@ -62,26 +62,21 @@ def log_in(auth_client):
 
 
 @pytest.fixture
-def make_db_user(require_live_database):
-    """Create committed users; each is deleted again after the test.
+def make_db_user(clean_database):
+    """Create committed users; clean_database removes them after the test.
 
     Routes open their own DB session, so test users have to be real commits
     (not the SAVEPOINT-isolated db_session) for the routes to see them.
     """
-    user_ids = []
 
     def _make(display_name="Test User"):
         with SessionLocal() as db:
             user = create_user(
                 db, email=f"{uuid.uuid4()}@example.com", display_name=display_name
             )
-        user_ids.append(user.id)
         return user.id
 
-    yield _make
-    with SessionLocal() as db:
-        for user_id in user_ids:
-            delete_user(db, user_id)
+    return _make
 
 
 @pytest.fixture
@@ -157,6 +152,25 @@ def require_live_database(test_database):
     CI sets REQUIRE_TEST_DATABASE so a missing database fails the job instead
     of silently skipping every account/database test.
     """
+
+
+@pytest.fixture
+def clean_database(require_live_database):
+    """Empty every table after the test.
+
+    For tests whose rows are really committed (e.g. by a route's own
+    session), which the db_session rollback can't undo. Tables are looked up
+    at teardown, so new tables in the DDL are covered automatically.
+    """
+    yield
+    with engine.begin() as connection:
+        tables = connection.scalars(
+            text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+        ).all()
+        if tables:
+            quote = connection.dialect.identifier_preparer.quote
+            names = ", ".join(quote(table) for table in tables)
+            connection.exec_driver_sql(f"TRUNCATE {names} RESTART IDENTITY CASCADE")
 
 
 @pytest.fixture
