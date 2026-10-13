@@ -49,6 +49,30 @@ def exchange_code_for_token(
 
     if response.status_code != 200:
         raise SpotifyAuthError(f"Token exchange failed ({response.status_code})")
+
+    return response.json()
+
+
+def refresh_access_token(
+    *, refresh_token: str, client_id: str, client_secret: str
+) -> dict:
+    """Exchange a Spotify refresh token for a new access token."""
+    try:
+        response = requests.post(
+            TOKEN_URL,
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+            },
+            auth=(client_id, client_secret),
+            timeout=REQUEST_TIMEOUT,
+        )
+    except requests.RequestException as exc:
+        raise SpotifyAuthError("Could not reach Spotify token endpoint") from exc
+
+    if response.status_code != 200:
+        raise SpotifyAuthError(f"Token refresh failed ({response.status_code})")
+
     return response.json()
 
 
@@ -64,4 +88,5 @@ def get_current_user_profile(access_token: str) -> dict:
 
     if response.status_code != 200:
         raise SpotifyAuthError(f"Profile request failed ({response.status_code})")
+
     return response.json()
