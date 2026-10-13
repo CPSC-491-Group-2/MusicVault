@@ -5,7 +5,7 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 import requests
-from sqlalchemy import delete, select
+from sqlalchemy import select
 
 from app import create_app
 from app.services import spotify_auth
@@ -99,22 +99,6 @@ def spotify(monkeypatch):
     return FakeSpotify(monkeypatch)
 
 
-@pytest.fixture
-def cleanup_users(require_live_database):
-    # The callback opens its own DB session and commits, so rows it creates
-    # aren't covered by the db_session rollback. Delete them explicitly.
-    spotify_ids, emails = [], []
-    yield spotify_ids, emails
-    with SessionLocal() as db:
-        user_ids = db.scalars(
-            select(SpotifyAccount.user_id).where(
-                SpotifyAccount.spotify_account_id.in_(spotify_ids)
-            )
-        ).all()
-        db.execute(delete(User).where(User.id.in_(user_ids) | User.email.in_(emails)))
-        db.commit()
-
-
 def start_login(client):
     """Hit /login and return the state it stored in the session."""
     client.get(LOGIN)
@@ -164,8 +148,7 @@ def test_login_ignores_redirect_uri_from_request(oauth_client):
 # --- /callback: happy path (needs the test database) ----------------------
 
 
-def test_callback_logs_in_new_user(oauth_client, spotify, cleanup_users):
-    cleanup_users[0].append(spotify.spotify_id)
+def test_callback_logs_in_new_user(oauth_client, spotify, clean_database):
     state = start_login(oauth_client)
 
     response = oauth_client.get(f"{CALLBACK}?code=auth-code&state={state}")
@@ -193,8 +176,7 @@ def test_callback_logs_in_new_user(oauth_client, spotify, cleanup_users):
         assert session_user_id(oauth_client) == str(account.user_id)
 
 
-def test_login_grants_access_to_protected_routes(oauth_client, spotify, cleanup_users):
-    cleanup_users[0].append(spotify.spotify_id)
+def test_login_grants_access_to_protected_routes(oauth_client, spotify, clean_database):
     assert oauth_client.get("/api/v1/me").status_code == 401
 
     oauth_client.get(f"{CALLBACK}?code=auth-code&state={start_login(oauth_client)}")
@@ -210,8 +192,7 @@ def test_failed_login_does_not_grant_access(oauth_client, spotify):
     assert oauth_client.get("/api/v1/me").status_code == 401
 
 
-def test_callback_state_cannot_be_replayed(oauth_client, spotify, cleanup_users):
-    cleanup_users[0].append(spotify.spotify_id)
+def test_callback_state_cannot_be_replayed(oauth_client, spotify, clean_database):
     state = start_login(oauth_client)
     oauth_client.get(f"{CALLBACK}?code=auth-code&state={state}")
 
@@ -221,8 +202,7 @@ def test_callback_state_cannot_be_replayed(oauth_client, spotify, cleanup_users)
     assert len(spotify.token_requests) == 1
 
 
-def test_callback_returning_user_reuses_account(oauth_client, spotify, cleanup_users):
-    cleanup_users[0].append(spotify.spotify_id)
+def test_callback_returning_user_reuses_account(oauth_client, spotify, clean_database):
     oauth_client.get(f"{CALLBACK}?code=c1&state={start_login(oauth_client)}")
     first_user_id = session_user_id(oauth_client)
 
@@ -245,13 +225,11 @@ def test_callback_returning_user_reuses_account(oauth_client, spotify, cleanup_u
 
 
 def test_callback_does_not_link_existing_user_by_email(
-    oauth_client, spotify, cleanup_users
+    oauth_client, spotify, clean_database
 ):
     # Spotify emails aren't guaranteed verified, so a matching email must not
     # log someone into an account that already exists.
     taken_email = spotify.profile_response.json()["email"]
-    cleanup_users[0].append(spotify.spotify_id)
-    cleanup_users[1].append(taken_email)
     with SessionLocal() as db:
         existing = User(email=taken_email, display_name="Already Here")
         db.add(existing)
@@ -381,3 +359,73 @@ def test_routes_refuse_to_run_without_config(app, missing, path):
 
     assert response.status_code == 503
     assert response.get_json()["message"] == "Spotify login is not configured."
+# --- refresh token ---------------------------------------------------------
+
+
+def test_refresh_access_token_success(monkeypatch):
+    requests_made = []
+
+    def fake_post(url, **kwargs):
+        requests_made.append((url, kwargs))
+        return FakeResponse(
+            200,
+            {
+                "access_token": "new-access-token",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "user-read-email",
+            },
+        )
+
+    monkeypatch.setattr(spotify_auth.requests, "post", fake_post)
+
+    token = spotify_auth.refresh_access_token(
+        refresh_token="refresh-123",
+        client_id="test-client-id",
+        client_secret=CLIENT_SECRET,
+    )
+
+    assert token["access_token"] == "new-access-token"
+
+    url, kwargs = requests_made[0]
+    assert url == spotify_auth.TOKEN_URL
+    assert kwargs["data"] == {
+        "grant_type": "refresh_token",
+        "refresh_token": "refresh-123",
+    }
+    assert kwargs["auth"] == ("test-client-id", CLIENT_SECRET)
+    assert kwargs["timeout"] == spotify_auth.REQUEST_TIMEOUT
+
+
+def test_refresh_access_token_rejected(monkeypatch):
+    def fake_post(url, **kwargs):
+        return FakeResponse(400, {"error": "invalid_grant"})
+
+    monkeypatch.setattr(spotify_auth.requests, "post", fake_post)
+
+    with pytest.raises(
+    spotify_auth.SpotifyRefreshTokenError,
+    match="Spotify refresh token is invalid",
+    ):
+        spotify_auth.refresh_access_token(
+            refresh_token="bad-refresh-token",
+            client_id="test-client-id",
+            client_secret=CLIENT_SECRET,
+        )
+
+
+def test_refresh_access_token_spotify_unreachable(monkeypatch):
+    def fake_post(url, **kwargs):
+        raise requests.ConnectionError("network down")
+
+    monkeypatch.setattr(spotify_auth.requests, "post", fake_post)
+
+    with pytest.raises(
+        spotify_auth.SpotifyAuthError,
+        match="Could not reach Spotify token endpoint",
+    ):
+        spotify_auth.refresh_access_token(
+            refresh_token="refresh-123",
+            client_id="test-client-id",
+            client_secret=CLIENT_SECRET,
+        )

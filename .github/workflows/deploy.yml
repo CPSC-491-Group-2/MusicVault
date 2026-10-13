@@ -21,8 +21,31 @@ jobs:
     # workflow_run also fires for failed builds; only ship green ones.
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: [self-hosted, prod-1]
+    # Secrets and variables are read from this environment's settings.
+    environment: production
+
+    # compose.yml interpolates these, so nothing lands on the runner's disk.
+    env:
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+      SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      SPOTIFY_REDIRECT_URI: ${{ vars.SPOTIFY_REDIRECT_URI }}
+      SESSION_COOKIE_SECURE: ${{ vars.SESSION_COOKIE_SECURE }}
 
     steps:
+      # Missing values otherwise deploy fine and break later, at login.
+      - name: Check deploy configuration
+        run: |
+          : "${SECRET_KEY:?is not set in the production environment}"
+          : "${DATABASE_URL:?is not set in the production environment}"
+          : "${SPOTIFY_CLIENT_ID:?is not set in the production environment}"
+          : "${SPOTIFY_CLIENT_SECRET:?is not set in the production environment}"
+          : "${SPOTIFY_REDIRECT_URI:?is not set in the production environment}"
+          : "${FRONTEND_URL:?is not set in the production environment}"
+          : "${SESSION_COOKIE_SECURE:?is not set in the production environment}"
+
       # Checked out for compose.yml, pinned to the commit that was built.
       - name: Checkout repository
         uses: actions/checkout@v4
