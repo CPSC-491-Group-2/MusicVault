@@ -141,6 +141,7 @@ cp .env.example .env
 | `FRONTEND_URL` | No | Where users land after login, and the allowed CORS origin. Defaults to `http://localhost:3000`. |
 | `SESSION_COOKIE_SECURE` | No | Set to `True` when the site is served over HTTPS. Defaults to `False`. |
 | `DATABASE_URL` | No | PostgreSQL connection string. Defaults to a local `musicvault` database. |
+| `TEST_DATABASE_URL` | Tests only | Database the backend tests use. Must end in `_test`. Defaults to a local `musicvault_test` database. See [Running Backend Tests](#running-backend-tests). |
 
 Generate a `SECRET_KEY`:
 
@@ -377,18 +378,17 @@ cd backend
 pip install -r requirements-dev.txt
 ```
 
-Create the test database and apply the schema (one-time setup):
-
-```bash
-createdb musicvault_test
-psql -d musicvault_test -f DDL/initial_schema.sql
-```
-
-Run the tests from the `backend` directory:
+You only need a running PostgreSQL server. Run the tests from the `backend` directory:
 
 ```bash
 python -m pytest
 ```
+
+There's no manual database setup. On each run, pytest:
+
+1. Creates the test database if it doesn't exist yet.
+2. Drops all its tables and rebuilds them from `DDL/initial_schema.sql`, so leftovers from an earlier (or crashed) run are gone and the schema always matches the DDL.
+3. Resets data after every database test. Tests using `db_session` are rolled back. Tests whose rows are really committed (for example, through an API route) use the `clean_database` fixture, which empties every table afterwards.
 
 By default the tests connect to:
 
@@ -396,15 +396,18 @@ By default the tests connect to:
 postgresql+psycopg2://localhost:5432/musicvault_test
 ```
 
-To use a different user, password, or port, set `TEST_DATABASE_URL`:
+The database credentials come from the `TEST_DATABASE_URL` environment variable. pytest does not read `.env`, so set it in your shell to use a different user, password, or port:
 
 ```bash
-TEST_DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/musicvault_test python -m pytest
+export TEST_DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/musicvault_test
+python -m pytest
 ```
 
-If no test database is reachable, the database tests are skipped and the rest still run.
+The database user needs permission to create databases (`CREATEDB`), or the test database must already exist and be owned by that user.
 
-GitHub Actions runs the same tests on every pull request and push to `master`, using a temporary PostgreSQL database that is discarded after each run. A failing test fails the workflow.
+If no PostgreSQL server is reachable, the database tests are skipped and the rest still run.
+
+GitHub Actions runs the same tests on every pull request and push to `master`, against a temporary PostgreSQL server that is discarded after each run. pytest creates the test database and schema there the same way it does locally. A failing test fails the workflow.
 
 The tests never need real Spotify credentials or a network connection. Spotify's endpoints are faked, and configuration uses placeholder values.
 
@@ -414,6 +417,7 @@ The tests never need real Spotify credentials or a network connection. Spotify's
 | `test_protected_routes.py` | `login_required` on every protected route: unauthorized, tampered sessions, deleted users. Also `/me` and logout |
 | `test_user_routes.py` | `/users/{id}`: own account allowed; other and nonexistent accounts forbidden |
 | `test_config.py` | Secrets read from environment variables with no hardcoded fallbacks, and login returning `503` when any required variable is missing or empty |
+| `test_database_framework.py` | The test database setup itself: schema built from the DDL, committed rows reset between tests, `db_session` rolled back, non-`_test` databases refused |
 
 The same workflow also runs [gitleaks](https://github.com/gitleaks/gitleaks) over the branch's full history, and fails if a secret has been committed.
 
