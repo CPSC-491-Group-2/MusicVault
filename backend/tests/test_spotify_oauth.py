@@ -404,8 +404,8 @@ def test_refresh_access_token_rejected(monkeypatch):
     monkeypatch.setattr(spotify_auth.requests, "post", fake_post)
 
     with pytest.raises(
-        spotify_auth.SpotifyAuthError,
-        match=r"Token refresh failed \(400\)",
+    spotify_auth.SpotifyRefreshTokenError,
+    match="Spotify refresh token is invalid",
     ):
         spotify_auth.refresh_access_token(
             refresh_token="bad-refresh-token",

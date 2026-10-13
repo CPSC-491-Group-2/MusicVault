@@ -2,8 +2,10 @@ name: musicvault
 
 services:
   backend:
-    image: ghcr.io/cpsc-491-group-2/musicvault-backend:${TAG:-latest}
-    build: ./backend
+  image: ghcr.io/cpsc-491-group-2/musicvault-backend:${TAG:-latest}
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
     restart: unless-stopped
     # Values come from the shell or a repo-root .env (see .env.example).
     # Secrets stay out of the image and out of this file.

@@ -15,9 +15,15 @@ class SpotifyAuthError(Exception):
     """Spotify rejected a request or couldn't be reached."""
 
 
+class SpotifyRefreshTokenError(SpotifyAuthError):
+    """Spotify explicitly rejected the refresh token."""
+
+
 def build_authorize_url(
     *, client_id: str, redirect_uri: str, scope: str, state: str
 ) -> str:
+    """Build the Spotify OAuth authorization URL."""
+
     params = {
         "client_id": client_id,
         "response_type": "code",
@@ -25,14 +31,15 @@ def build_authorize_url(
         "scope": scope,
         "state": state,
     }
+
     return f"{AUTHORIZE_URL}?{urlencode(params)}"
 
 
 def exchange_code_for_token(
     *, code: str, client_id: str, client_secret: str, redirect_uri: str
 ) -> dict:
-    # The client secret only ever travels server-to-server, as HTTP Basic auth
-    # on this request. It is never sent to the browser.
+    """Exchange a Spotify authorization code for tokens."""
+
     try:
         response = requests.post(
             TOKEN_URL,
@@ -54,9 +61,16 @@ def exchange_code_for_token(
 
 
 def refresh_access_token(
-    *, refresh_token: str, client_id: str, client_secret: str
+    *,
+    refresh_token: str,
+    client_id: str,
+    client_secret: str,
 ) -> dict:
-    """Exchange a Spotify refresh token for a new access token."""
+    """Refresh an expired or rejected Spotify access token."""
+
+    if not refresh_token:
+        raise SpotifyAuthError("Spotify refresh token is missing")
+
     try:
         response = requests.post(
             TOKEN_URL,
@@ -70,17 +84,43 @@ def refresh_access_token(
     except requests.RequestException as exc:
         raise SpotifyAuthError("Could not reach Spotify token endpoint") from exc
 
-    if response.status_code != 200:
-        raise SpotifyAuthError(f"Token refresh failed ({response.status_code})")
+    # An invalid_grant response indicates that Spotify rejected
+    # the refresh token itself.
+    if response.status_code == 400:
+        try:
+            error_data = response.json()
+        except ValueError:
+            error_data = {}
 
-    return response.json()
+        if isinstance(error_data, dict) and error_data.get("error") == "invalid_grant":
+            raise SpotifyRefreshTokenError("Spotify refresh token is invalid")
+
+    if response.status_code != 200:
+        raise SpotifyAuthError("Spotify token refresh request failed")
+
+    try:
+        token_data = response.json()
+    except ValueError as exc:
+        raise SpotifyAuthError("Invalid Spotify token response") from exc
+
+    if not isinstance(token_data, dict):
+        raise SpotifyAuthError("Invalid Spotify token response")
+
+    if not token_data.get("access_token"):
+        raise SpotifyAuthError("Spotify did not return an access token")
+
+    return token_data
 
 
 def get_current_user_profile(access_token: str) -> dict:
+    """Retrieve the authenticated Spotify user's profile."""
+
     try:
         response = requests.get(
             PROFILE_URL,
-            headers={"Authorization": f"Bearer {access_token}"},
+            headers={
+                "Authorization": f"Bearer {access_token}",
+            },
             timeout=REQUEST_TIMEOUT,
         )
     except requests.RequestException as exc:

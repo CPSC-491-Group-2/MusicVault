@@ -1,27 +1,27 @@
+"""Spotify metadata models."""
+
 from dataclasses import dataclass
 
 
 @dataclass
 class TrackMetadata:
-    spotify_id: str 
+    spotify_id: str
     name: str
     artists: list[str]
     artist_ids: list[str]
-    album_name: str|None
-    album_id: str|None 
-    release_date: str
-    duration_ms: int
+    album_name: str | None
+    album_id: str | None
+    release_date: str | None
+    duration_ms: int | None
     explicit: bool
-    spotify_url: str|None
-    #can add images of the track cover images as part of the data
-    image_url: str|None
+    spotify_url: str | None
+    image_url: str | None
+
+
 @dataclass
 class ArtistMetadata:
-        spotify_id: str
-        name: str
-        genres: list[str]
-        popularity: int|None
-        spotify_url:str|None
-    # can add artist's avatar images as part of the data 
-
-    
+    spotify_id: str
+    name: str
+    genres: list[str]
+    popularity: int | None
+    spotify_url: str | None
