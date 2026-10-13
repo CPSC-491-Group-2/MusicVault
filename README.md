@@ -404,8 +404,10 @@ pip install -r requirements-dev.txt
 You only need a running PostgreSQL server. Run the tests from the `backend` directory:
 
 ```bash
-python -m pytest
+PYTHONPATH=.:../spotify-api-backend python -m pytest
 ```
+
+`PYTHONPATH` is needed because the backend imports the Spotify service code in `spotify-api-backend`. GitHub Actions sets the same path.
 
 There's no manual database setup. On each run, pytest:
 
@@ -441,6 +443,7 @@ The tests never need real Spotify credentials or a network connection. Spotify's
 | `test_user_routes.py` | `/users/{id}`: own account allowed; other and nonexistent accounts forbidden |
 | `test_config.py` | Secrets read from environment variables with no hardcoded fallbacks, and login returning `503` when any required variable is missing or empty |
 | `test_database_framework.py` | The test database setup itself: schema built from the DDL, committed rows reset between tests, `db_session` rolled back, non-`_test` databases refused |
+| `test_top_songs_queries.py` | Saving and reading a user's top songs: rank order, every field unchanged after saving, refreshes replacing the old list, separate time ranges and users, missing or empty data, invalid input rejected without partial writes |
 
 The same workflow also runs [gitleaks](https://github.com/gitleaks/gitleaks) over the branch's full history, and fails if a secret has been committed.
 

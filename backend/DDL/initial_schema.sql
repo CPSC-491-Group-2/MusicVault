@@ -232,7 +232,50 @@ CREATE TABLE chart_entries (
 
 
 -- ============================================================
--- 9. INDEXES
+-- 9. USER TOP SONGS
+-- A user's ranked top songs from Spotify, one list per time
+-- range. Each refresh replaces that user's list for the range.
+-- Song details live in songs, shared across users.
+-- ============================================================
+
+CREATE TABLE user_top_songs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    user_id UUID NOT NULL
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    song_id UUID NOT NULL
+        REFERENCES songs(id)
+        ON DELETE CASCADE,
+
+    time_range VARCHAR(20) NOT NULL,
+    rank INTEGER NOT NULL,
+
+    fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_user_top_songs_user_range_rank
+        UNIQUE (user_id, time_range, rank),
+
+    CONSTRAINT uq_user_top_songs_user_range_song
+        UNIQUE (user_id, time_range, song_id),
+
+    CONSTRAINT chk_user_top_songs_rank_positive
+        CHECK (rank > 0),
+
+    CONSTRAINT chk_user_top_songs_time_range
+        CHECK (
+            time_range IN (
+                'short_term',
+                'medium_term',
+                'long_term'
+            )
+        )
+);
+
+
+-- ============================================================
+-- 10. INDEXES
 -- Additional indexes for common lookup and join patterns.
 -- ============================================================
 
@@ -304,8 +347,12 @@ CREATE INDEX idx_chart_entries_chart_position
     ON chart_entries(chart_id, position);
 
 
+CREATE INDEX idx_user_top_songs_song_id
+    ON user_top_songs(song_id);
+
+
 -- ============================================================
--- 10. SCHEMA RELATIONSHIP SUMMARY
+-- 11. SCHEMA RELATIONSHIP SUMMARY
 -- ============================================================
 
 /*
@@ -347,11 +394,22 @@ CREATE INDEX idx_chart_entries_chart_position
       | many : 1
       v
     songs
+
+
+    users
+      |
+      | 1 : many
+      v
+    user_top_songs
+      |
+      | many : 1
+      v
+    songs
 */
 
 
 -- ============================================================
--- 11. IMPORTANT DESIGN NOTES
+-- 12. IMPORTANT DESIGN NOTES
 -- ============================================================
 
 /*
@@ -381,4 +439,9 @@ CREATE INDEX idx_chart_entries_chart_position
 8. OAuth credentials must never be committed to Git.
    Production token storage may later be encrypted or moved into
    a dedicated secure credential mechanism.
+
+9. user_top_songs is a snapshot, not a history.
+   Saving a user's top songs for a time range replaces the
+   previous list for that range. The unique (user_id, time_range,
+   rank) constraint also serves the "list in rank order" lookup.
 */
