@@ -23,5 +23,5 @@ class ArtistMetadata:
         popularity: int|None
         spotify_url:str|None
     # can add artist's avatar images as part of the data 
-
+        image_url: str|None
     
