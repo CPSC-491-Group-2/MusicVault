@@ -355,6 +355,89 @@ def test_top_tracks_refreshes_rejected_token_and_retries():
     assert mock_service_class.call_args_list[1].args == ("new-access-token",)
 
 
+def test_top_tracks_response_matches_documented_schema():
+    """Normalized Spotify responses match the documented API contract."""
+    from app.schemas.spotify import SpotifyTopTracksResponseSchema
+
+    response_data = {
+        "items": [
+            {
+                "spotify_id": "track123",
+                "title": "Example Song",
+                "artists": [
+                    {
+                        "spotify_id": "artist123",
+                        "name": "Example Artist",
+                    }
+                ],
+                "album": {
+                    "spotify_id": "album123",
+                    "name": "Example Album",
+                    "image_url": "https://example.com/cover.jpg",
+                },
+                "duration_ms": 215000,
+                "popularity": 75,
+                "explicit": False,
+                "spotify_url": "https://open.spotify.com/track/track123",
+            }
+        ],
+        "total": 1,
+        "limit": 20,
+        "offset": 0,
+        "next": None,
+        "previous": None,
+    }
+
+    schema = SpotifyTopTracksResponseSchema()
+
+    errors = schema.validate(response_data)
+
+    assert errors == {}
+
+    serialized = schema.dump(response_data)
+
+    assert set(serialized.keys()) == {
+        "items",
+        "total",
+        "limit",
+        "offset",
+        "next",
+        "previous",
+    }
+
+    track = serialized["items"][0]
+
+    assert set(track.keys()) == {
+        "spotify_id",
+        "title",
+        "artists",
+        "album",
+        "duration_ms",
+        "popularity",
+        "explicit",
+        "spotify_url",
+    }
+
+    assert isinstance(track["spotify_id"], str)
+    assert isinstance(track["title"], str)
+    assert isinstance(track["artists"], list)
+    assert isinstance(track["album"], dict)
+    assert isinstance(track["duration_ms"], int)
+    assert isinstance(track["popularity"], int)
+    assert isinstance(track["explicit"], bool)
+
+    assert set(track["artists"][0].keys()) == {
+        "spotify_id",
+        "name",
+    }
+
+    assert set(track["album"].keys()) == {
+        "spotify_id",
+        "name",
+        "image_url",
+    }
+
+
 @pytest.mark.parametrize(
     "spotify_error, expected_message",
     [
@@ -398,13 +481,8 @@ def test_top_tracks_handles_upstream_failures(spotify_error, expected_message):
     fake_session.__enter__.return_value = fake_db
 
     with (
-        patch(
-            "app.routes.spotify.SessionLocal",
-            return_value=fake_session,
-        ),
-        patch(
-            "app.routes.spotify.SpotifyService",
-        ) as mock_service_class,
+        patch("app.routes.spotify.SessionLocal", return_value=fake_session),
+        patch("app.routes.spotify.SpotifyService") as mock_service_class,
     ):
         mock_service = mock_service_class.return_value
         mock_service.get_normalized_user_top_tracks.side_effect = spotify_error
