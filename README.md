@@ -205,6 +205,7 @@ Spotify apps start in Development Mode, where only users added under **User Mana
 |---|---|
 | `GET /api/auth/spotify/login` | Redirects the user to Spotify to approve access. |
 | `GET /api/auth/spotify/callback` | Spotify redirects back here. The backend finishes login and redirects to `FRONTEND_URL`. |
+| `POST /api/auth/spotify/logout` | Ends the session. Returns `204 No Content`. |
 
 - **State/CSRF protection:** `/login` generates a random `state` value and stores it in a signed, HttpOnly session cookie. `/callback` only continues if Spotify returns the same value. Each `state` can be used once.
 - **Client secret:** used only in the backend's server-to-server request to Spotify. It is never sent to the browser.
@@ -218,6 +219,26 @@ If login fails, the user is sent back to the frontend with an `auth_error` query
 | `access_denied` | The user declined on Spotify's consent screen. |
 | `invalid_state` | The `state` was missing, wrong, or already used. Starting login again fixes it. |
 | `spotify_error` | Spotify returned an error or could not be reached. |
+
+### Protected routes
+
+Routes that need a logged-in user use the `login_required` decorator from `app/auth.py`. It reads the user from the signed session cookie set at login, and the view can use that user as `g.current_user`. Anything else gets `401 Unauthorized`:
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "You must be logged in to access this resource."
+}
+```
+
+This includes a missing, unsigned, or tampered cookie, and a session for a user that has since been deleted.
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/v1/me` | Returns the logged-in user. |
+| `GET /api/v1/users/{id}` | Returns the user only if `{id}` is the logged-in user. Any other ID gets `403 Forbidden`, including IDs that don't exist, so the route can't be used to discover accounts. |
+
+On a flask-smorest `MethodView`, protect every method with `decorators = [login_required]`.
 
 ## Running the Backend
 
@@ -407,6 +428,17 @@ TEST_DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/musicvault_
 If no test database is reachable, the database tests are skipped and the rest still run.
 
 GitHub Actions runs the same tests on every pull request and push to `master`, using a temporary PostgreSQL database that is discarded after each run. A failing test fails the workflow.
+
+The tests never need real Spotify credentials or a network connection. Spotify's endpoints are faked, and configuration uses placeholder values.
+
+| Test file | Covers |
+|---|---|
+| `test_spotify_oauth.py` | Login and callback: happy path, state/CSRF validation, Spotify-side failures |
+| `test_protected_routes.py` | `login_required` on every protected route: unauthorized, tampered sessions, deleted users. Also `/me` and logout |
+| `test_user_routes.py` | `/users/{id}`: own account allowed; other and nonexistent accounts forbidden |
+| `test_config.py` | Secrets read from environment variables with no hardcoded fallbacks, and login returning `503` when any required variable is missing or empty |
+
+The same workflow also runs [gitleaks](https://github.com/gitleaks/gitleaks) over the branch's full history, and fails if a secret has been committed.
 
 ## Code Quality
 

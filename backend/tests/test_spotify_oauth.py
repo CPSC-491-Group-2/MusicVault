@@ -193,6 +193,23 @@ def test_callback_logs_in_new_user(oauth_client, spotify, cleanup_users):
         assert session_user_id(oauth_client) == str(account.user_id)
 
 
+def test_login_grants_access_to_protected_routes(oauth_client, spotify, cleanup_users):
+    cleanup_users[0].append(spotify.spotify_id)
+    assert oauth_client.get("/api/v1/me").status_code == 401
+
+    oauth_client.get(f"{CALLBACK}?code=auth-code&state={start_login(oauth_client)}")
+    response = oauth_client.get("/api/v1/me")
+
+    assert response.status_code == 200
+    assert response.get_json()["display_name"] == "OAuth Tester"
+
+
+def test_failed_login_does_not_grant_access(oauth_client, spotify):
+    oauth_client.get(f"{CALLBACK}?code=auth-code&state=forged")
+
+    assert oauth_client.get("/api/v1/me").status_code == 401
+
+
 def test_callback_state_cannot_be_replayed(oauth_client, spotify, cleanup_users):
     cleanup_users[0].append(spotify.spotify_id)
     state = start_login(oauth_client)
