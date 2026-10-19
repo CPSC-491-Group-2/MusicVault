@@ -20,7 +20,6 @@ class TrackMetadata:
 
 @dataclass
 class ArtistMetadata:
-<<<<<<< HEAD
         spotify_id: str
         name: str
         genres: list[str]
@@ -29,10 +28,3 @@ class ArtistMetadata:
     # can add artist's avatar images as part of the data 
         image_url: str|None
     
-=======
-    spotify_id: str
-    name: str
-    genres: list[str]
-    popularity: int | None
-    spotify_url: str | None
->>>>>>> master
