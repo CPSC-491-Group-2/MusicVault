@@ -86,7 +86,7 @@ class SpotifyService:
         if time_range not in valid_time_range:
             raise ValueError("time range invalid")
         if offset < 0:
-            raise ValueError("offset must be nonnegative")
+            raise ValueError("offset must be greater than 0")
         # construct endpoint
         endpoint = f"{self.base_url}/me/top/tracks"
 
