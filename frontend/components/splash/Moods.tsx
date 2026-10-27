@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { Chip } from "@/components/ui/Chip";
+
 const MOODS = [
   "Late-night drive",
   "Rainy afternoon",
@@ -60,23 +62,15 @@ export default function Moods() {
         </div>
 
         <div className="flex flex-wrap gap-2.5">
-          {MOODS.map((mood) => {
-            const isSelected = selected.has(mood);
-
-            return (
-              <button
-                key={mood}
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => toggle(mood)}
-                className={`rounded-full border border-olive px-[18px] py-2.5 text-[16px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-olive ${
-                  isSelected ? "bg-olive text-blush" : "text-olive"
-                }`}
-              >
-                {mood}
-              </button>
-            );
-          })}
+          {MOODS.map((mood) => (
+            <Chip
+              key={mood}
+              pressed={selected.has(mood)}
+              onPressedChange={() => toggle(mood)}
+            >
+              {mood}
+            </Chip>
+          ))}
         </div>
       </div>
     </section>
