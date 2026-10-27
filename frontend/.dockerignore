@@ -1,3 +1,7 @@
 node_modules
 .next
 .env*
+tests/
+playwright.config.ts
+test-results/
+playwright-report/

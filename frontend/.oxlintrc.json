@@ -17,5 +17,24 @@
     "browser": true,
     "node": true
   },
-  "ignorePatterns": [".next/**", "node_modules/**"]
+  "ignorePatterns": [".next/**", "node_modules/**"],
+  "overrides": [
+    {
+      "files": ["tests/**"],
+      "excludeFiles": ["tests/fixtures/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@playwright/test",
+                "message": "Import test and expect from tests/fixtures instead, so specs get mockApi, a11yAllowlist and toPassAxe."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

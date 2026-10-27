@@ -1,0 +1,36 @@
+// Starter for a feature test. It ends in .txt so it never runs.
+//
+// 1. Copy it to tests/<feature>/<thing>.spec.ts, e.g. tests/vault/saved-songs.spec.ts
+// 2. Rename the describe, the tag and the tests, then replace the example steps.
+// 3. Run it: npx playwright test tests/vault
+//
+// More in tests/README.md.
+
+// Always import test and expect from the fixtures, never from "@playwright/test".
+import { expect, test } from "../fixtures";
+// API response types live in types/api.ts, next to the rest of the contract.
+import type { Song } from "@/types/api";
+
+// Tag the group so it can run on its own: npm run test:e2e -- --grep @vault
+test.describe("saved songs", { tag: "@vault" }, () => {
+  test("lists the songs in your vault", async ({ page, mockApi, a11yAllowlist }) => {
+    // The backend isn't running in tests. Answer each API call the page makes.
+    // "vault" means /api/v1/vault. Anything not mocked gets a 503.
+    await mockApi<Song[]>("vault", [{ id: 1, title: "Porch Light", artist: "Hollis Reed" }]);
+
+    await page.goto("/library");
+
+    // Find things the way a person would: by role and name, or by label.
+    // Use data-testid only when nothing has an accessible handle, and leave a
+    // comment saying why.
+    const savedSongs = page.getByRole("region", { name: "Saved songs" });
+    await expect(savedSongs.getByText("Porch Light")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Export to CSV" })).toBeEnabled();
+
+    // Every API call the page made was mocked.
+    expect(mockApi.calls).toEqual([]);
+
+    // Scan just your feature with axe. Give its container an id to aim at.
+    await expect(page).toPassAxe({ include: "#saved-songs", allowlist: a11yAllowlist });
+  });
+});
