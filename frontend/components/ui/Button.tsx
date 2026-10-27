@@ -13,7 +13,11 @@ type ButtonOwnProps = {
 };
 
 type ButtonAsButtonProps = ButtonOwnProps &
-  Omit<ComponentPropsWithoutRef<"button">, "className" | "children"> & {
+  Omit<
+    ComponentPropsWithoutRef<"button">,
+    "className" | "children" | "type"
+  > & {
+    type?: "button" | "submit";
     href?: undefined;
     external?: undefined;
   };
@@ -35,10 +39,11 @@ export type ButtonProps =
   | ButtonAsExternalLinkProps;
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: "bg-olive text-blush hover:bg-green focus-visible:bg-green",
+  primary:
+    "bg-olive text-blush hover:not-disabled:bg-green focus-visible:bg-green disabled:text-blush/45",
   secondary:
-    "bg-paper border-[1.5px] border-olive/25 text-olive hover:bg-blush",
-  quiet: "text-olive hover:bg-blush",
+    "bg-paper border-[1.5px] border-olive/25 text-olive hover:not-disabled:bg-blush disabled:text-olive/45",
+  quiet: "text-olive hover:not-disabled:bg-blush disabled:text-olive/45",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
@@ -49,7 +54,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 
 export function Button(props: ButtonProps) {
   const classes = [
-    "inline-flex items-center justify-center gap-2 font-medium",
+    "inline-flex items-center justify-center gap-2 font-medium disabled:cursor-not-allowed",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-olive",
     VARIANT_CLASSES[props.variant],
     SIZE_CLASSES[props.size],
@@ -67,10 +72,11 @@ export function Button(props: ButtonProps) {
       children,
       href: _href,
       external: _external,
+      type = "button",
       ...rest
     } = props;
     return (
-      <button {...rest} type="button" className={classes}>
+      <button {...rest} type={type} className={classes}>
         {icon}
         {children}
       </button>
