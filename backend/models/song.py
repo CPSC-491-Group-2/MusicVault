@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
+
+if TYPE_CHECKING:
+    from .artist import SongArtist
 
 
 class Song(Base):
@@ -23,6 +26,7 @@ class Song(Base):
     spotify_track_id: Mapped[str | None] = mapped_column(
         String(255), unique=True, nullable=True
     )
+    isrc: Mapped[str | None] = mapped_column(String(32), nullable=True)
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     explicit: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     popularity: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -41,6 +45,14 @@ class Song(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    # Credited artists in credit order; artist_name is the display string.
+    artist_credits: Mapped[list["SongArtist"]] = relationship(
+        back_populates="song",
+        order_by="SongArtist.position",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:

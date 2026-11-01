@@ -15,6 +15,7 @@ def normalize_track(track: dict) -> dict:
     album = track.get("album") or {}
     artists = track.get("artists") or []
     external_urls = track.get("external_urls") or {}
+    external_ids = track.get("external_ids") or {}
 
     if not isinstance(album, dict):
         raise ValueError("Spotify album must be an object")
@@ -50,6 +51,9 @@ def normalize_track(track: dict) -> dict:
     if not isinstance(external_urls, dict):
         external_urls = {}
 
+    if not isinstance(external_ids, dict):
+        external_ids = {}
+
     return {
         "spotify_id": track["id"],
         "title": track["name"],
@@ -65,6 +69,7 @@ def normalize_track(track: dict) -> dict:
             track.get("explicit") if track.get("explicit") is not None else False
         ),
         "spotify_url": external_urls.get("spotify"),
+        "isrc": external_ids.get("isrc"),
     }
 
 

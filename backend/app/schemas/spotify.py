@@ -51,6 +51,7 @@ class SpotifyTrackSchema(Schema):
     popularity = fields.Integer(allow_none=True)
     explicit = fields.Boolean(required=True)
     spotify_url = fields.Url(allow_none=True)
+    isrc = fields.String(allow_none=True)
 
 
 class SpotifyTopTracksResponseSchema(Schema):

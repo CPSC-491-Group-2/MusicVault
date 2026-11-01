@@ -32,6 +32,9 @@ def test_normalize_valid_spotify_track():
         "external_urls": {
             "spotify": "https://open.spotify.com/track/track123",
         },
+        "external_ids": {
+            "isrc": "USUM71703861",
+        },
     }
 
     normalized = normalize_track(spotify_track)
@@ -54,6 +57,7 @@ def test_normalize_valid_spotify_track():
         "popularity": 75,
         "explicit": False,
         "spotify_url": "https://open.spotify.com/track/track123",
+        "isrc": "USUM71703861",
     }
 
 
@@ -112,6 +116,7 @@ def test_normalize_track_with_missing_optional_fields():
         "popularity": None,
         "explicit": False,
         "spotify_url": None,
+        "isrc": None,
     }
 
 

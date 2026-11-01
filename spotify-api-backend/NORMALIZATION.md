@@ -35,7 +35,8 @@ Example normalized track:
   "duration_ms": 215000,
   "popularity": 75,
   "explicit": false,
-  "spotify_url": "https://open.spotify.com/track/track123"
+  "spotify_url": "https://open.spotify.com/track/track123",
+  "isrc": "USUM71703861"
 }
 ```
 
@@ -56,6 +57,7 @@ This is illustrative data rather than an actual Spotify API response.
 | `popularity` | `popularity` | Optional; `null` if missing |
 | `explicit` | `explicit` | Defaults to `false` if missing or `null` |
 | `external_urls.spotify` | `spotify_url` | Optional; `null` if missing |
+| `external_ids.isrc` | `isrc` | Optional; `null` if missing. Used to look the recording up in other music databases |
 
 The normalizer retains all artists in their original order. An empty artist list is permitted.
 
@@ -85,7 +87,8 @@ Example response:
       "duration_ms": 215000,
       "popularity": 75,
       "explicit": false,
-      "spotify_url": null
+      "spotify_url": null,
+      "isrc": null
     }
   ],
   "total": 50,
