@@ -42,7 +42,7 @@ export function AccountDetailsPanel({
               className={
                 value
                   ? "break-words text-[17px] leading-[1.5]"
-                  : "text-[17px] leading-[1.5] text-olive/45"
+                  : "text-[17px] leading-[1.5] text-olive/70"
               }
             >
               {value || "Not added yet"}

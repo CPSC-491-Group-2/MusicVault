@@ -62,7 +62,7 @@ export function TextField({
           type={isPassword && passwordVisible ? "text" : type}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
-          className="h-full w-full min-w-0 bg-transparent text-[17px] text-olive outline-none placeholder:text-olive/45 disabled:cursor-not-allowed disabled:text-olive/45"
+          className="h-full w-full min-w-0 bg-transparent text-[17px] text-olive outline-none placeholder:text-olive/45 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-olive disabled:cursor-not-allowed disabled:text-olive/45"
         />
         {isPassword ? (
           <Button
