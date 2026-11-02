@@ -12,6 +12,23 @@ const BACKEND_URL =
 
 export const getCurrentUser = cache(
   async (): Promise<CurrentUser | null> => {
+    // Provide a deterministic authenticated user for Playwright tests.
+    // This is only active when explicitly enabled by the test environment.
+    if (process.env.PLAYWRIGHT_TEST === "1") {
+      return {
+        id: "00000000-0000-0000-0000-000000000001",
+        email: "playwright@example.com",
+        display_name: "Playwright Test User",
+        created_at: "2026-01-01T00:00:00.000Z",
+        updated_at: "2026-01-01T00:00:00.000Z",
+        has_password: false,
+        spotify: {
+          connected: false,
+          display_name: null,
+        },
+      };
+    }
+
     const cookieStore = await cookies();
 
     const cookieHeader = cookieStore
