@@ -1,0 +1,48 @@
+{
+  "description": "Fixed dataset for recommendation tests. Artists and songs are made up. Some entries are deliberately incomplete or malformed to test missing-metadata handling; see each entry's note.",
+  "artists": {
+    "paper-lanterns": {"name": "Paper Lanterns", "genres": ["indie pop", "bedroom pop"]},
+    "glass-harbor": {"name": "Glass Harbor", "genres": ["indie pop", "indie rock"]},
+    "moth-season": {"name": "Moth Season", "genres": ["indie rock", "shoegaze"]},
+    "wolf-alice-ann": {"name": "Wolf, Alice Ann", "genres": ["Indie Pop "], "note": "comma in name; genre needs trimming and lowercasing"},
+    "low-orbit": {"name": "Low Orbit", "genres": ["hip hop", "rap"]},
+    "concrete-choir": {"name": "Concrete Choir", "genres": ["hip hop", "jazz rap"]},
+    "nine-volt": {"name": "Nine Volt", "genres": ["rap", "trap"]},
+    "blue-hour-trio": {"name": "Blue Hour Trio", "genres": ["jazz", "jazz rap"]},
+    "neon-tide": {"name": "Neon Tide", "genres": ["house", "electronic"]},
+    "static-bloom": {"name": "Static Bloom", "genres": ["electronic", "synthwave"]},
+    "quiet-signal": {"name": "Quiet Signal", "genres": null, "note": "genres never looked up"},
+    "no-genres-found": {"name": "Unfiled", "genres": [], "note": "genre lookup ran and found none"},
+    "messy-genres": {"name": "Messy Data", "genres": ["", 7, null, "  "], "note": "no usable genres"}
+  },
+  "songs": {
+    "indie-1": {"artists": ["paper-lanterns"], "popularity": 62, "audio": {"energy": 0.45, "danceability": 0.55, "valence": 0.60, "acousticness": 0.40, "tempo": 112}},
+    "indie-2": {"artists": ["glass-harbor"], "popularity": 48, "audio": {"energy": 0.60, "danceability": 0.50, "valence": 0.55, "acousticness": 0.25, "tempo": 124}},
+    "indie-3": {"artists": ["moth-season"], "popularity": 30, "audio": {"energy": 0.70, "danceability": 0.35, "valence": 0.35, "acousticness": 0.15, "tempo": 132}},
+    "indie-4": {"artists": ["paper-lanterns", "glass-harbor"], "popularity": 71, "audio": {"energy": 0.50, "danceability": 0.55, "valence": 0.58, "acousticness": 0.35, "tempo": 118}},
+    "indie-5": {"artists": ["wolf-alice-ann"], "popularity": 15, "audio": {"energy": 0.40, "danceability": 0.60, "valence": 0.65, "acousticness": 0.45}},
+    "indie-6": {"artists": ["moth-season"], "popularity": null, "audio": null, "note": "no audio features or popularity"},
+    "hiphop-1": {"artists": ["low-orbit"], "popularity": 80, "audio": {"energy": 0.75, "danceability": 0.82, "valence": 0.50, "acousticness": 0.10, "tempo": 92}},
+    "hiphop-2": {"artists": ["concrete-choir"], "popularity": 44, "audio": {"energy": 0.65, "danceability": 0.78, "valence": 0.45, "acousticness": 0.20, "tempo": 88}},
+    "hiphop-3": {"artists": ["nine-volt"], "popularity": 88, "audio": {"energy": 0.85, "danceability": 0.80, "valence": 0.30, "acousticness": 0.05, "tempo": 140}},
+    "hiphop-4": {"artists": ["low-orbit", "nine-volt"], "popularity": 76, "audio": {"energy": 0.80, "danceability": 0.84, "valence": 0.40, "acousticness": 0.08, "tempo": 96}},
+    "hiphop-5": {"artists": ["concrete-choir", "blue-hour-trio"], "popularity": 22, "audio": {"energy": 0.55, "danceability": 0.70, "valence": 0.55, "acousticness": 0.40, "tempo": 90}},
+    "jazz-1": {"artists": ["blue-hour-trio"], "popularity": 18, "audio": {"energy": 0.30, "danceability": 0.45, "valence": 0.50, "acousticness": 0.85, "tempo": 100}},
+    "electronic-1": {"artists": ["neon-tide"], "popularity": 66, "audio": {"energy": 0.88, "danceability": 0.90, "valence": 0.70, "acousticness": 0.02, "tempo": 124}},
+    "electronic-2": {"artists": ["static-bloom"], "popularity": 39, "audio": {"energy": 0.72, "danceability": 0.68, "valence": 0.52, "acousticness": 0.05, "tempo": 110}},
+    "electronic-3": {"artists": ["neon-tide", "static-bloom"], "popularity": 55, "audio": {"energy": 0.80, "danceability": 0.85, "valence": 0.60, "acousticness": 0.03, "tempo": 122}},
+    "unknown-1": {"artists": ["quiet-signal"], "popularity": null, "audio": null, "note": "artist only: no genres, audio or popularity"},
+    "unknown-2": {"artists": ["quiet-signal"], "popularity": 5, "audio": {"energy": 0.50}},
+    "unfiled-1": {"artists": ["no-genres-found"], "popularity": 50, "audio": {"energy": 0.6, "tempo": "fast", "valence": null, "danceability": true, "key": "C"}, "note": "non-numeric audio values must be ignored"},
+    "messy-1": {"artists": ["messy-genres"], "popularity": null, "audio": {"energy": NaN, "tempo": Infinity, "valence": 0.5}, "note": "NaN and Infinity must be ignored"},
+    "no-artists-1": {"artists": [], "popularity": null, "audio": {}, "note": "no metadata at all"}
+  },
+  "profiles": {
+    "indie_listener": {"seeds": ["indie-1", "indie-2", "indie-3"]},
+    "hiphop_listener": {"seeds": ["hiphop-1", "hiphop-2", "hiphop-3"]},
+    "mixed_listener": {"seeds": ["indie-4", "electronic-1", "hiphop-5"]},
+    "sparse_listener": {"seeds": ["unknown-1", "indie-6"], "note": "seeds without audio features; unknown-1 has no genres either"},
+    "messy_listener": {"seeds": ["messy-1", "no-artists-1", "unfiled-1"], "note": "seeds with unusable metadata"},
+    "empty_listener": {"seeds": [], "note": "no top songs yet"}
+  }
+}

@@ -9,6 +9,10 @@ Each component (artist, genre, audio) scores a pair of songs from 0 to 1, or
 returns None when either song lacks that data. The overall score averages
 only the components that have data, so a song with no genres or audio
 features is still scored on its artists alone.
+
+When ranking, a component the user's seed has but the candidate lacks
+scores missing_data_score (0 by default) instead of being left out, so a
+candidate with little data can't outrank real matches on that little data.
 """
 
 from __future__ import annotations
@@ -22,19 +26,20 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from models.song import Song
 
-ALGORITHM_VERSION = "similarity-v1"
+ALGORITHM_VERSION = "similarity-v2"
 
 COMPONENTS = ("artist", "genre", "audio")
 
 # Audio features compared by default, and the difference between two songs
-# that counts as completely dissimilar. Features Spotify-style providers
-# report on a 0-1 scale use 1.0; tempo is in BPM.
+# that counts as completely dissimilar. Features reported on a 0-1 scale use
+# 0.5: real songs mostly sit in the middle of that scale, so a full-scale
+# range would make almost every pair look alike. Tempo is in BPM.
 DEFAULT_AUDIO_FEATURE_RANGES = MappingProxyType(
     {
-        "danceability": 1.0,
-        "energy": 1.0,
-        "valence": 1.0,
-        "acousticness": 1.0,
+        "danceability": 0.5,
+        "energy": 0.5,
+        "valence": 0.5,
+        "acousticness": 0.5,
         "tempo": 60.0,
     }
 )
@@ -72,6 +77,11 @@ class ScoringConfig:
     # to favour lesser-known songs. Off by default.
     popularity_penalty: float = 0.0
     audio_feature_ranges: Mapping[str, float] = DEFAULT_AUDIO_FEATURE_RANGES
+    # Audio is only compared when both songs share at least this many features.
+    min_audio_features: int = 3
+    # Component score when ranking and the seed has that data but the
+    # candidate doesn't. 0 treats missing data as no match.
+    missing_data_score: float = 0.0
 
     def __post_init__(self):
         weights = self.weights()
@@ -85,6 +95,10 @@ class ScoringConfig:
             raise ValueError("popularity_penalty must be in [0, 1]")
         if any(r <= 0 for r in self.audio_feature_ranges.values()):
             raise ValueError("audio feature ranges must be positive")
+        if self.min_audio_features < 1:
+            raise ValueError("min_audio_features must be at least 1")
+        if not 0 <= self.missing_data_score <= 1:
+            raise ValueError("missing_data_score must be in [0, 1]")
 
     def weights(self) -> dict[str, float]:
         return {
@@ -132,18 +146,20 @@ def audio_similarity(
     a: TrackFeatures,
     b: TrackFeatures,
     feature_ranges: Mapping[str, float] = DEFAULT_AUDIO_FEATURE_RANGES,
+    min_features: int = 1,
 ) -> float | None:
     """1 minus the mean scaled difference over features both songs have.
 
     Each difference is divided by that feature's range and capped at 1, so a
-    tempo gap of 60 BPM or more counts as completely different.
+    tempo gap of 60 BPM or more counts as completely different. None when
+    the songs share fewer than `min_features` features.
     """
     distances = [
         min(abs(a.audio[name] - b.audio[name]) / scale, 1.0)
         for name, scale in sorted(feature_ranges.items())
         if _is_number(a.audio.get(name)) and _is_number(b.audio.get(name))
     ]
-    if not distances:
+    if not distances or len(distances) < min_features:
         return None
     return 1.0 - sum(distances) / len(distances)
 
@@ -158,7 +174,9 @@ def similarity(
     components = {
         "artist": artist_similarity(a, b),
         "genre": genre_similarity(a, b),
-        "audio": audio_similarity(a, b, config.audio_feature_ranges),
+        "audio": audio_similarity(
+            a, b, config.audio_feature_ranges, config.min_audio_features
+        ),
     }
     return Similarity(_combine(components, config.weights()), components)
 
@@ -173,9 +191,11 @@ def rank_candidates(
 
     `seeds` are the user's songs in rank order (best first). Each component
     is averaged across seeds, weighting seed i by seed_rank_decay ** i and
-    skipping seeds where the component has no data; the averaged components
-    are then combined like similarity(). Candidates that are seeds, and
-    repeated candidates, are dropped. Ties are broken by track_id.
+    skipping seeds that lack the component's data; where the seed has it but
+    the candidate doesn't, the component scores missing_data_score. The
+    averaged components are then combined like similarity(). Candidates that
+    are seeds, and repeated candidates, are dropped. Ties are broken by
+    track_id.
     """
     seed_ids = {seed.track_id for seed in seeds}
     weights = config.weights()
@@ -187,7 +207,12 @@ def rank_candidates(
             continue
         seen.add(candidate.track_id)
 
-        per_seed = [similarity(candidate, seed, config).components for seed in seeds]
+        per_seed = [
+            _fill_missing(
+                similarity(candidate, seed, config).components, candidate, seed, config
+            )
+            for seed in seeds
+        ]
         components = {
             name: _weighted_mean(
                 (sims[name], w) for sims, w in zip(per_seed, seed_weights)
@@ -231,6 +256,36 @@ def track_features_from_song(song: "Song") -> TrackFeatures:
         },
         popularity=song.popularity,
     )
+
+
+def _fill_missing(
+    components: dict[str, float | None],
+    candidate: TrackFeatures,
+    seed: TrackFeatures,
+    config: ScoringConfig,
+) -> dict[str, float | None]:
+    """Score components the seed has but the candidate lacks."""
+    return {
+        name: (
+            config.missing_data_score
+            if value is None
+            and _has(seed, name, config)
+            and not _has(candidate, name, config)
+            else value
+        )
+        for name, value in components.items()
+    }
+
+
+def _has(track: TrackFeatures, component: str, config: ScoringConfig) -> bool:
+    if component == "artist":
+        return bool(track.artists)
+    if component == "genre":
+        return bool(track.genres)
+    usable = sum(
+        _is_number(track.audio.get(name)) for name in config.audio_feature_ranges
+    )
+    return usable >= config.min_audio_features
 
 
 def _combine(

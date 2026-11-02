@@ -132,6 +132,33 @@ jobs:
       - name: Run backend tests
         run: python -m pytest backend/tests
 
+  # The recommendation scoring and regression tests, as their own check so a
+  # change in recommendation behaviour shows up by name on the PR. They are
+  # pure functions and need no database. backend-tests runs them too.
+  recommendation-tests:
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHONPATH: ${{ github.workspace }}/backend:${{ github.workspace }}/spotify-api-backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install -r backend/requirements.txt
+          python -m pip install -r backend/requirements-dev.txt
+
+      # Selecting no tests exits with an error, so losing the marker fails too.
+      - name: Run recommendation tests
+        run: python -m pytest backend/tests -m recommendation --strict-markers -v
+
   # Fails the run if a secret (API key, token, private key, ...) is committed
   # anywhere in the branch's history, not just the latest commit.
   secret-scan:
