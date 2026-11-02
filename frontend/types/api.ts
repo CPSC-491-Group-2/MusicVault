@@ -15,3 +15,25 @@ export interface Song {
   title: string;
   artist: string;
 }
+export interface SpotifyConnection {
+  connected: boolean;
+  display_name: string | null;
+}
+export interface CurrentUser {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  created_at: string;
+  updated_at: string;
+  has_password: boolean;
+  spotify: SpotifyConnection;
+}
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  display_name?: string | null;
+}
+export interface LoginRequest {
+  email: string;
+  password: string;
+}

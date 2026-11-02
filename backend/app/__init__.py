@@ -8,6 +8,7 @@ from app.routes.auth import auth_bp
 from app.routes.health import health_bp
 from app.routes.user import user_bp
 from app.routes.spotify import spotify_bp
+from app.routes.account import account_bp
 
 
 def create_app():
@@ -21,6 +22,11 @@ def create_app():
     )
 
     api = Api(app)
+
+    api.register_blueprint(
+        account_bp,
+        url_prefix="/api/v1",
+    )
 
     api.register_blueprint(
         health_bp,

@@ -1,12 +1,23 @@
+
 import Link from "next/link";
 
 import Wordmark from "@/components/brand/Wordmark";
-import { Button } from "@/components/ui/Button";
-import { SPOTIFY_LOGIN_URL } from "@/lib/auth";
+import type { CurrentUser } from "@/types/api";
 
+import { LogoutButton } from "./LogoutButton";
 import { NavLinks } from "./NavLinks";
 
-export function Sidebar() {
+type SidebarProps = {
+  user: CurrentUser;
+};
+
+export function Sidebar({ user }: SidebarProps) {
+  const accountName =
+    user.display_name ??
+    user.spotify.display_name ??
+    user.email ??
+    "MusicVault User";
+
   return (
     <aside className="hidden min-[860px]:flex sticky top-0 h-dvh flex-col gap-8 overflow-y-auto border-r border-olive/14 bg-canvas px-5 py-7">
       <Link
@@ -21,20 +32,31 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto rounded-2xl bg-paper p-4">
-        {/* TODO: read from session once auth ships */}
         <div className="flex items-center gap-3">
           <div className="size-10 shrink-0 rounded-full bg-orchid" />
-          <p className="text-[15px] font-medium">Spotify not connected</p>
+
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-medium">
+              {accountName}
+            </p>
+
+            <p className="text-sm text-olive/70">
+              {user.spotify.connected
+                ? "Spotify connected"
+                : "Spotify not connected"}
+            </p>
+          </div>
         </div>
-        <Button
-          variant="quiet"
-          size="sm"
-          href={SPOTIFY_LOGIN_URL}
-          external
-          className="mt-1"
-        >
-          Connect
-        </Button>
+
+        {user.email && user.email !== accountName && (
+          <p className="mt-3 truncate text-sm text-olive/70">
+            {user.email}
+          </p>
+        )}
+
+        <div className="mt-4 border-t border-olive/14 pt-4">
+          <LogoutButton />
+        </div>
       </div>
     </aside>
   );

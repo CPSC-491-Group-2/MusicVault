@@ -1,9 +1,19 @@
-import { AppShell } from "@/components/shell/AppShell";
+import { redirect } from "next/navigation";
 
-export default function AppLayout({
+import { AppShell } from "@/components/shell/AppShell";
+import { getCurrentUser } from "@/lib/session";
+
+export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <AppShell>{children}</AppShell>;
+  const user = await getCurrentUser();
+
+  // Require an authenticated MusicVault session.
+  if (!user) {
+    redirect("/login");
+  }
+
+  return <AppShell user={user}>{children}</AppShell>;
 }
