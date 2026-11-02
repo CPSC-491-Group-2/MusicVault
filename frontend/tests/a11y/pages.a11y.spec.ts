@@ -8,12 +8,7 @@ import { ROUTES, visit } from "../support/routes";
 // Pressed chips swap fill and text color, so that state gets its own scan.
 const PRESSED_CHIPS = [
   { path: "/", chip: "Rainy afternoon", fixme: "" },
-  {
-    path: "/ui",
-    chip: "Not selected",
-    fixme:
-      'The /ui gallery chips are static examples with no onPressedChange, so they never toggle. Making them interactive needs a call on their "Selected" and "Not selected" labels. The gallery already renders pressed chips, so the scan above covers the pressed styles.',
-  },
+  { path: "/ui", chip: "Rainy afternoon", fixme: "" },
 ];
 
 test.describe("axe scan", { tag: "@a11y" }, () => {

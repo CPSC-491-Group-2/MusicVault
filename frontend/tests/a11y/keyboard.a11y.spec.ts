@@ -16,12 +16,7 @@ const FOCUS_RING_FIXMES: Record<string, string> = {};
 // Toggle chips to drive with the mouse and the keyboard.
 const CHIPS = [
   { path: "/", chip: "Rainy afternoon", fixme: "" },
-  {
-    path: "/ui",
-    chip: "Not selected",
-    fixme:
-      'The /ui gallery chips are static examples with no onPressedChange, so they never toggle. Making them interactive needs a call on their "Selected" and "Not selected" labels.',
-  },
+  { path: "/ui", chip: "Rainy afternoon", fixme: "" },
 ];
 
 test.describe("keyboard", { tag: "@a11y" }, () => {
