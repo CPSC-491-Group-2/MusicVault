@@ -26,3 +26,6 @@ Thumbs.db
 .opencode/
 .cursor/
 .aider*
+
+# SOC 2 VM-01 generated reports (dependency vulnerabilities)
+docs/security/pip-audit/reports/
