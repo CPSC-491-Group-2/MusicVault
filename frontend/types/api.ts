@@ -2,19 +2,25 @@ export interface HealthResponse {
   status: string;
   service: string;
 }
+
+export interface SpotifyConnection {
+  connected: boolean;
+  display_name: string | null;
+}
+
 // GET /api/v1/me and GET /api/v1/users/:id
 export interface User {
   id: string;
   email: string | null;
   display_name: string | null;
   has_password: boolean;
-  spotify: {
-    connected: boolean;
-    display_name: string | null;
-  };
+  spotify: SpotifyConnection;
   created_at: string;
   updated_at: string;
 }
+
+export type CurrentUser = User;
+
 export type AuthErrorCode =
   | "invalid_state"
   | "access_denied"
@@ -24,39 +30,20 @@ export type AuthErrorCode =
   | "already_connected"
   | "invalid_credentials"
   | "email_taken";
+
 export interface RegisterRequest {
   email: string;
   password: string;
   display_name?: string;
 }
+
 export interface LoginRequest {
   email: string;
   password: string;
 }
+
 export interface Song {
   id: number;
   title: string;
   artist: string;
-}
-export interface SpotifyConnection {
-  connected: boolean;
-  display_name: string | null;
-}
-export interface CurrentUser {
-  id: string;
-  email: string | null;
-  display_name: string | null;
-  created_at: string;
-  updated_at: string;
-  has_password: boolean;
-  spotify: SpotifyConnection;
-}
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  display_name?: string | null;
-}
-export interface LoginRequest {
-  email: string;
-  password: string;
 }

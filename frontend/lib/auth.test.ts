@@ -2,7 +2,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  AuthApiError,
   loginAccount,
   logoutAccount,
   registerAccount,

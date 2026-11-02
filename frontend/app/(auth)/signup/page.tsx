@@ -33,7 +33,7 @@ export default function SignupPage() {
               id="display_name"
               name="display_name"
               type="text"
-              autoComplete="nickname"
+              autoComplete="name"
               placeholder="MusicFan"
               disabled
               className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm disabled:opacity-50"
