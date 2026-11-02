@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { AccountDetailsPanel } from "@/components/account/AccountDetailsPanel";
+import { PasswordPanel } from "@/components/account/PasswordPanel";
+import { SpotifyConnectionPanel } from "@/components/account/SpotifyConnectionPanel";
+import { authErrorMessage } from "@/components/auth/authErrors";
+import { LoginPanel } from "@/components/auth/LoginPanel";
+import { SignupPanel } from "@/components/auth/SignupPanel";
+import { AccountChip } from "@/components/shell/AccountChip";
 import {
   Avatar,
   Button,
@@ -9,6 +16,7 @@ import {
   Chip,
   CloseIcon,
   DownloadIcon,
+  FormMessage,
   HeartIcon,
   HomeIcon,
   IconButton,
@@ -23,12 +31,44 @@ import {
   Surface,
   SwipeIcon,
   Tag,
+  TextField,
   UserIcon,
 } from "@/components/ui";
+import type { User } from "@/types/api";
 
 export const metadata: Metadata = {
   title: "UI components · MusicVault",
   robots: { index: false },
+};
+
+const SPOTIFY_USER: User = {
+  id: "u1",
+  email: "anjelo@example.com",
+  display_name: "Anjelo",
+  has_password: true,
+  spotify: { connected: true, display_name: "anjelo" },
+  created_at: "2026-10-04T18:22:00Z",
+  updated_at: "2026-10-20T09:15:00Z",
+};
+
+const LOCAL_USER: User = {
+  id: "u2",
+  email: "maya.chen@example.com",
+  display_name: "Maya Chen",
+  has_password: true,
+  spotify: { connected: false, display_name: null },
+  created_at: "2026-09-14T16:05:00Z",
+  updated_at: "2026-10-11T12:40:00Z",
+};
+
+const SPOTIFY_ONLY_USER: User = {
+  id: "u3",
+  email: null,
+  display_name: "Jordan",
+  has_password: false,
+  spotify: { connected: true, display_name: "jordanplays" },
+  created_at: "2026-10-19T21:30:00Z",
+  updated_at: "2026-10-19T21:30:00Z",
 };
 
 const ICONS = [
@@ -120,6 +160,18 @@ export default function UiGalleryPage() {
         <Button variant="secondary" size="md" href="/library">
           Renders a link
         </Button>
+        <Button variant="primary" size="md" disabled>
+          Primary disabled
+        </Button>
+        <Button variant="secondary" size="md" disabled>
+          Secondary disabled
+        </Button>
+        <Button variant="quiet" size="md" disabled>
+          Quiet disabled
+        </Button>
+        <Button variant="primary" size="md" type="submit">
+          Submits a form
+        </Button>
       </Section>
 
       <Section title="IconButton">
@@ -175,6 +227,30 @@ export default function UiGalleryPage() {
         />
       </Section>
 
+      <Section title="TextField" stack>
+        <TextField label="Email" type="email" />
+        <TextField label="Name" hint="Shown on your profile" />
+        <TextField label="Email" type="email" error="Enter your email" />
+        <TextField
+          label="Password"
+          type="password"
+          hint="8 to 128 characters"
+        />
+        <TextField
+          label="Email"
+          type="email"
+          defaultValue="anjelo@example.com"
+          disabled
+        />
+      </Section>
+
+      <Section title="FormMessage" stack>
+        <FormMessage tone="error">
+          {authErrorMessage("invalid_credentials")}
+        </FormMessage>
+        <FormMessage tone="success">Password saved</FormMessage>
+      </Section>
+
       <Section title="Surface" stack>
         <Surface>Paper, the default, 28px padding</Surface>
         <Surface tone="olive">Olive, text turns blush</Surface>
@@ -215,6 +291,35 @@ export default function UiGalleryPage() {
             {name}
           </span>
         ))}
+      </Section>
+
+      <Section title="Auth" stack>
+        <div className="flex flex-wrap items-start gap-6">
+          <LoginPanel titleAs="h2" />
+          <LoginPanel titleAs="h2" error="spotify_not_allowed" />
+          <LoginPanel titleAs="h2" pending />
+          <SignupPanel titleAs="h2" />
+          <SignupPanel titleAs="h2" error="email_taken" />
+        </div>
+      </Section>
+
+      <Section title="Account" stack>
+        <div className="flex flex-wrap items-start gap-4">
+          <AccountChip user={SPOTIFY_USER} className="w-[220px]" />
+          <AccountChip user={LOCAL_USER} className="w-[220px]" />
+          <AccountChip user={SPOTIFY_ONLY_USER} className="w-[220px]" />
+        </div>
+        <div className="grid items-start gap-6 min-[1200px]:grid-cols-2">
+          <SpotifyConnectionPanel user={SPOTIFY_USER} />
+          <SpotifyConnectionPanel user={SPOTIFY_ONLY_USER} />
+          <SpotifyConnectionPanel user={LOCAL_USER} />
+          <SpotifyConnectionPanel user={LOCAL_USER} error="spotify_in_use" />
+          <SpotifyConnectionPanel user={SPOTIFY_USER} justConnected />
+          <PasswordPanel user={LOCAL_USER} />
+          <PasswordPanel user={SPOTIFY_ONLY_USER} />
+          <AccountDetailsPanel user={LOCAL_USER} />
+          <AccountDetailsPanel user={SPOTIFY_ONLY_USER} />
+        </div>
       </Section>
     </>
   );

@@ -1,9 +1,9 @@
-
 import type { LoginRequest, RegisterRequest } from "../types/api";
 import { API_URL } from "../services/api";
 
-// Preserve the existing Spotify OAuth entry point.
+// Preserve the existing Spotify OAuth entry points.
 export const SPOTIFY_LOGIN_URL = "/api/auth/spotify/login";
+export const SPOTIFY_CONNECT_URL = "/api/auth/spotify/connect";
 
 // Authentication endpoint errors.
 export class AuthApiError extends Error {
