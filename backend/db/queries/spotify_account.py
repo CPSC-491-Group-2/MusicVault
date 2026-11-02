@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -32,15 +31,26 @@ def link_spotify_account(db: Session, *, profile: dict, token: dict) -> User:
     )
 
     account = get_spotify_account_by_spotify_id(db, spotify_id)
+
     if account is None:
-        email = profile.get("email")
-        if email and db.scalar(select(User.id).where(User.email == email)):
-            email = None
-        user = User(email=email, display_name=profile.get("display_name"))
-        account = SpotifyAccount(user=user, spotify_account_id=spotify_id)
+        user = User(
+            email=None,
+            display_name=profile.get("display_name"),
+        )
+
+        account = SpotifyAccount(
+            user=user,
+            spotify_account_id=spotify_id,
+        )
+
         db.add(account)
     else:
         user = account.user
+
+    spotify_email = profile.get("email")
+
+    if spotify_email:
+        account.email = spotify_email.strip()
 
     account.spotify_user_id = spotify_id
     account.display_name = profile.get("display_name")
