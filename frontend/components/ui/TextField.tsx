@@ -37,7 +37,7 @@ export function TextField({
     .join(" ");
 
   const fieldClasses = [
-    "flex h-[68px] w-full items-center gap-3 rounded-[20px] bg-paper border-[1.5px] focus-within:border-2 focus-within:border-olive",
+    "flex h-[68px] w-full items-center gap-3 rounded-[20px] bg-paper border-[1.5px] focus-within:border-2 focus-within:border-olive focus-within:outline-2 focus-within:outline-solid focus-within:outline-offset-2 focus-within:outline-olive",
     error ? "border-olive" : "border-olive/14",
     isPassword ? "pl-5 pr-2" : "px-5",
   ].join(" ");

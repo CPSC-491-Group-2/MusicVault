@@ -156,14 +156,7 @@ function hasVisibleShadow(boxShadow: string) {
   });
 }
 
-/**
- * Asserts the element has focus and shows it: an outline at least 2px wide in
- * a visible color, or a visible box-shadow ring. Spec section 11 asks for a
- * 2px olive ring with a 2 to 3px offset.
- */
-export async function expectVisibleFocus(locator: Locator) {
-  await expect(locator).toBeFocused();
-
+async function readFocusRing(locator: Locator) {
   const style = await locator.evaluate((el) => {
     const computed = getComputedStyle(el);
 
@@ -180,9 +173,25 @@ export async function expectVisibleFocus(locator: Locator) {
     parseFloat(style.outlineWidth) >= 2 &&
     !isTransparent(style.outlineColor);
 
+  return { ...style, shown: outline || hasVisibleShadow(style.boxShadow) };
+}
+
+/**
+ * Asserts the element has focus and shows it: an outline at least 2px wide in
+ * a visible color, or a visible box-shadow ring. Spec section 11 asks for a
+ * 2px olive ring with a 2 to 3px offset.
+ */
+export async function expectVisibleFocus(locator: Locator) {
+  await expect(locator).toBeFocused();
+
+  const ring = await readFocusRing(locator);
+  const isInput = await locator.evaluate((el) => el.localName === "input");
+  // TextField and SearchField draw the ring on the field around the input.
+  const shown = ring.shown || (isInput && (await readFocusRing(locator.locator(".."))).shown);
+
   expect(
-    outline || hasVisibleShadow(style.boxShadow),
-    `${await describe(locator)} shows no focus indicator (outline: ${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}; box-shadow: ${style.boxShadow})`,
+    shown,
+    `${await describe(locator)} shows no focus indicator (outline: ${ring.outlineStyle} ${ring.outlineWidth} ${ring.outlineColor}; box-shadow: ${ring.boxShadow})`,
   ).toBe(true);
 }
 
