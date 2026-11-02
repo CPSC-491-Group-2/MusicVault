@@ -1,3 +1,5 @@
 /docs/design-spec.md @anjelogo
 /frontend/components/ui/ @anjelogo
 /frontend/app/globals.css @anjelogo
+/frontend/tests/fixtures/ @anjelogo
+/frontend/playwright.config.ts @anjelogo
