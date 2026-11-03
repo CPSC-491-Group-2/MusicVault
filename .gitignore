@@ -27,5 +27,6 @@ Thumbs.db
 .cursor/
 .aider*
 
-# SOC 2 VM-01 generated reports (dependency vulnerabilities)
+# SOC 2 CC 7.2 generated reports
 docs/security/pip-audit/reports/
+docs/security/zap/reports/
