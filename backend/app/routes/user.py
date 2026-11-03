@@ -1,9 +1,12 @@
 from flask import g
 from flask.views import MethodView
 from flask_smorest import Blueprint
+from sqlalchemy import select
 
 from app.auth import forbidden, login_required
-from app.schemas.user import UserResponseSchema
+from app.schemas.user import CurrentUserResponseSchema, UserResponseSchema
+from db.session import SessionLocal
+from models.spotify_account import SpotifyAccount
 
 user_bp = Blueprint(
     "users",
@@ -30,11 +33,36 @@ class UserResource(MethodView):
 
 @user_bp.route("/me")
 class CurrentUserResource(MethodView):
-    # Runs before flask-smorest's response handling, so a 401 short-circuits
-    # without touching the view.
     decorators = [login_required]
 
-    @user_bp.response(200, UserResponseSchema)
+    @user_bp.response(200, CurrentUserResponseSchema)
     @user_bp.alt_response(401, description="Not logged in")
     def get(self):
-        return g.current_user
+        user = g.current_user
+
+        # Query Spotify information in an active database session.
+        with SessionLocal() as db:
+            spotify_account = db.scalar(
+                select(SpotifyAccount).where(
+                    SpotifyAccount.user_id == user.id
+                )
+            )
+
+            spotify_info = {
+                "connected": spotify_account is not None,
+                "display_name": (
+                    spotify_account.display_name
+                    if spotify_account is not None
+                    else None
+                ),
+            }
+
+        return {
+            "id": user.id,
+            "email": user.email,
+            "display_name": user.display_name,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+            "has_password": bool(user.password_hash),
+            "spotify": spotify_info,
+        }
