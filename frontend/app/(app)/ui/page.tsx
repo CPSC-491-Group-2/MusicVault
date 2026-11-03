@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { AccountDetailsPanel } from "@/components/account/AccountDetailsPanel";
@@ -7,6 +8,8 @@ import { SpotifyConnectionPanel } from "@/components/account/SpotifyConnectionPa
 import { authErrorMessage } from "@/components/auth/authErrors";
 import { LoginPanel } from "@/components/auth/LoginPanel";
 import { SignupPanel } from "@/components/auth/SignupPanel";
+import { ErrorField } from "@/components/gallery/ErrorField";
+import { LoadingButton } from "@/components/gallery/LoadingButton";
 import { ToggleChip } from "@/components/gallery/ToggleChip";
 import { AccountChip } from "@/components/shell/AccountChip";
 import {
@@ -20,6 +23,7 @@ import {
   HeartIcon,
   HomeIcon,
   IconButton,
+  LoadingStack,
   PageHeader,
   PauseIcon,
   PlayIcon,
@@ -71,21 +75,37 @@ const SPOTIFY_ONLY_USER: User = {
   updated_at: "2026-10-19T21:30:00Z",
 };
 
-const ICONS = [
-  { name: "home", Icon: HomeIcon },
-  { name: "swipe", Icon: SwipeIcon },
-  { name: "heart", Icon: HeartIcon },
-  { name: "search", Icon: SearchIcon },
-  { name: "chart", Icon: ChartIcon },
-  { name: "user", Icon: UserIcon },
+/* The data-icon keys the hover motion in globals.css is written against. */
+const NAV_ICONS = [
+  { name: "home", Icon: HomeIcon, href: "/dashboard" },
+  { name: "swipe", Icon: SwipeIcon, href: "/swipe" },
+  { name: "vault", Icon: HeartIcon, href: "/library" },
+  { name: "search", Icon: SearchIcon, href: "/search" },
+  { name: "taste", Icon: ChartIcon, href: "/taste" },
+  { name: "profile", Icon: UserIcon, href: "/profile" },
+];
+
+const HOVER_ICONS = [
   { name: "plus", Icon: PlusIcon },
+  { name: "download", Icon: DownloadIcon },
+];
+
+const PLAIN_ICONS = [
   { name: "check", Icon: CheckIcon },
   { name: "play", Icon: PlayIcon },
   { name: "pause", Icon: PauseIcon },
   { name: "close", Icon: CloseIcon },
   { name: "skip", Icon: SkipIcon },
-  { name: "download", Icon: DownloadIcon },
 ];
+
+const ICON_TILE = "flex w-16 flex-col items-center gap-2 py-2 text-[13px]";
+
+const ICON_TILE_INTERACTIVE = [
+  ICON_TILE,
+  "rounded-[14px] hover:bg-blush/60",
+  "outline-offset-0 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-olive",
+  "transition-[color,background-color,outline-offset] duration-[200ms,200ms,150ms] ease-mv",
+].join(" ");
 
 type SectionProps = {
   title: string;
@@ -172,6 +192,16 @@ export default function UiGalleryPage() {
         <Button variant="primary" size="md" type="submit">
           Submits a form
         </Button>
+        <LoadingButton loadingLabel="Syncing" stopLabel="Stop syncing">
+          Sync library
+        </LoadingButton>
+        <LoadingButton
+          loadingLabel="Importing"
+          progress={42}
+          stopLabel="Stop importing"
+        >
+          Import playlists
+        </LoadingButton>
       </Section>
 
       <Section title="IconButton">
@@ -240,6 +270,10 @@ export default function UiGalleryPage() {
           defaultValue="anjelo@example.com"
           disabled
         />
+        <p className="max-w-[60ch] text-[17px]">
+          Submit twice to see the same message shake again.
+        </p>
+        <ErrorField />
       </Section>
 
       <Section title="FormMessage" stack>
@@ -263,6 +297,26 @@ export default function UiGalleryPage() {
         <ProgressBar value={1} label="Setup progress, done" />
       </Section>
 
+      <Section title="LoadingStack">
+        <span className="flex flex-col items-center gap-2 text-[13px]">
+          <LoadingStack size={56} label="" />
+          56px
+        </span>
+        <span className="flex flex-col items-center gap-2 text-[13px]">
+          <LoadingStack size={92} label="" />
+          92px, the default
+        </span>
+        <span className="flex flex-col items-center gap-2 text-[13px]">
+          <LoadingStack size={140} label="" />
+          140px
+        </span>
+
+        <Surface tone="olive" className="flex items-center gap-6">
+          <LoadingStack size={92} mono label="Loading your vault" />
+          <span className="text-[15px]">Mono, on olive it turns blush</span>
+        </Surface>
+      </Section>
+
       <Section title="Avatar">
         <Avatar size={32} initial="A" />
         <Avatar size={40} initial="M" />
@@ -280,11 +334,27 @@ export default function UiGalleryPage() {
       </Section>
 
       <Section title="icons">
-        {ICONS.map(({ name, Icon }) => (
-          <span
+        {NAV_ICONS.map(({ name, Icon, href }) => (
+          <Link
             key={name}
-            className="flex w-16 flex-col items-center gap-2 text-[13px]"
+            href={href}
+            data-icon={name}
+            className={ICON_TILE_INTERACTIVE}
           >
+            <Icon className="h-6 w-6" />
+            {name}
+          </Link>
+        ))}
+
+        {HOVER_ICONS.map(({ name, Icon }) => (
+          <button key={name} type="button" className={ICON_TILE_INTERACTIVE}>
+            <Icon className="h-6 w-6" />
+            {name}
+          </button>
+        ))}
+
+        {PLAIN_ICONS.map(({ name, Icon }) => (
+          <span key={name} className={ICON_TILE}>
             <Icon className="h-6 w-6" />
             {name}
           </span>
