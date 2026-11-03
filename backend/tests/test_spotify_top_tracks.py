@@ -379,6 +379,7 @@ def test_top_tracks_response_matches_documented_schema():
                 "popularity": 75,
                 "explicit": False,
                 "spotify_url": "https://open.spotify.com/track/track123",
+                "isrc": "USUM71703861",
             }
         ],
         "total": 1,
@@ -416,6 +417,7 @@ def test_top_tracks_response_matches_documented_schema():
         "popularity",
         "explicit",
         "spotify_url",
+        "isrc",
     }
 
     assert isinstance(track["spotify_id"], str)

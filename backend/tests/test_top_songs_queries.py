@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from db.queries.top_songs import get_top_songs, save_top_songs
 from db.queries.user import delete_user
 from db.session import SessionLocal
+from models.artist import Artist, SongArtist
 from models.song import Song
 from models.user_top_song import UserTopSong
 
@@ -37,6 +38,7 @@ def make_track(n, **overrides):
         "popularity": 40 + n,
         "explicit": True,
         "spotify_url": f"https://open.spotify.com/track/track-{n}",
+        "isrc": f"USXXX26{n:05d}",
     }
     track.update(overrides)
     return track
@@ -113,6 +115,7 @@ def test_fields_survive_a_round_trip(user_id):
     assert song.popularity_source == "spotify"
     assert song.explicit is True
     assert song.spotify_url == "https://open.spotify.com/track/track-7"
+    assert song.isrc == "USXXX2600007"
 
 
 def test_text_is_stored_exactly(user_id):
@@ -129,6 +132,145 @@ def test_text_is_stored_exactly(user_id):
 
     assert entry.song.title == track["title"]
     assert entry.song.artist_name == "Beyoncé"
+
+
+# --- artists ------------------------------------------------------------------
+
+
+def credited(user_id, time_range="medium_term"):
+    """Each saved song's credited artists, as (Spotify artist ID, name) pairs."""
+    with SessionLocal() as db:
+        return [
+            [
+                (c.artist.spotify_artist_id, c.artist.name)
+                for c in entry.song.artist_credits
+            ]
+            for entry in get_top_songs(db, user_id, time_range)
+        ]
+
+
+def test_artists_are_stored_in_credit_order(user_id):
+    with SessionLocal() as db:
+        save_top_songs(db, user_id, "medium_term", [make_track(1)])
+
+    assert credited(user_id) == [
+        [("artist-1", "Artist 1"), ("artist-feat", "Featured")]
+    ]
+    with SessionLocal() as db:
+        positions = db.scalars(select(SongArtist.position).order_by("position"))
+        assert list(positions) == [1, 2]
+
+
+def test_artist_names_with_commas_stay_one_artist(user_id):
+    track = make_track(
+        1,
+        artists=[
+            {"spotify_id": "tyler", "name": "Tyler, The Creator"},
+            {"spotify_id": "kali", "name": "Kali Uchis"},
+        ],
+    )
+    with SessionLocal() as db:
+        save_top_songs(db, user_id, "medium_term", [track])
+
+    assert credited(user_id) == [
+        [("tyler", "Tyler, The Creator"), ("kali", "Kali Uchis")]
+    ]
+
+
+def test_shared_artist_is_stored_once(user_id):
+    with SessionLocal() as db:
+        save_top_songs(db, user_id, "medium_term", [make_track(1), make_track(2)])
+
+    # artist-1, artist-2, and the "Featured" artist both songs credit.
+    assert count(Artist) == 3
+    assert count(SongArtist) == 4
+
+
+def test_refresh_updates_artist_names_and_credits(user_id):
+    with SessionLocal() as db:
+        save_top_songs(db, user_id, "medium_term", [make_track(1)])
+        save_top_songs(
+            db,
+            user_id,
+            "medium_term",
+            [
+                make_track(
+                    1,
+                    artists=[
+                        {"spotify_id": "artist-feat", "name": "Featured (renamed)"},
+                        {"spotify_id": "artist-new", "name": "New"},
+                    ],
+                )
+            ],
+        )
+
+    assert credited(user_id) == [
+        [("artist-feat", "Featured (renamed)"), ("artist-new", "New")]
+    ]
+    # The uncredited artist row stays; only the song's credit is removed.
+    assert count(Artist) == 3
+    assert count(SongArtist) == 2
+
+
+def test_reordered_artists_are_saved_in_the_new_order(user_id):
+    first = {"spotify_id": "a", "name": "A"}
+    second = {"spotify_id": "b", "name": "B"}
+    with SessionLocal() as db:
+        save_top_songs(
+            db, user_id, "medium_term", [make_track(1, artists=[first, second])]
+        )
+        save_top_songs(
+            db, user_id, "medium_term", [make_track(1, artists=[second, first])]
+        )
+
+    assert credited(user_id) == [[("b", "B"), ("a", "A")]]
+
+
+def test_artists_without_id_or_name_and_repeats_are_skipped(user_id):
+    track = make_track(
+        1,
+        artists=[
+            {"spotify_id": "a", "name": "A"},
+            {"spotify_id": None, "name": "No ID"},
+            {"spotify_id": "no-name", "name": ""},
+            {"spotify_id": "a", "name": "A again"},
+        ],
+    )
+    with SessionLocal() as db:
+        save_top_songs(db, user_id, "medium_term", [track])
+
+    assert credited(user_id) == [[("a", "A")]]
+
+
+def test_saving_songs_leaves_artist_genres_alone(user_id):
+    with SessionLocal() as db:
+        save_top_songs(db, user_id, "medium_term", [make_track(1)])
+        artist = db.scalar(select(Artist).where(Artist.spotify_artist_id == "artist-1"))
+        artist.genres = ["indie pop"]
+        artist.genres_source = "spotify"
+        db.commit()
+
+        save_top_songs(db, user_id, "medium_term", [make_track(1)])
+
+    with SessionLocal() as db:
+        artist = db.scalar(select(Artist).where(Artist.spotify_artist_id == "artist-1"))
+        assert artist.genres == ["indie pop"]
+        assert artist.genres_source == "spotify"
+
+
+def test_new_artists_have_unknown_genres(user_id):
+    with SessionLocal() as db:
+        save_top_songs(db, user_id, "medium_term", [make_track(1)])
+
+    with SessionLocal() as db:
+        assert set(db.scalars(select(Artist.genres))) == {None}
+
+
+def test_artist_genres_must_be_an_array(user_id):
+    with SessionLocal() as db:
+        db.add(Artist(name="Bad Genres", genres={"pop": True}))
+        with pytest.raises(IntegrityError):
+            db.commit()
 
 
 # --- refreshing ---------------------------------------------------------------
@@ -202,6 +344,7 @@ def test_missing_optional_fields_are_stored_as_null(user_id):
     with SessionLocal() as db:
         [entry] = get_top_songs(db, user_id, "medium_term")
         song = entry.song
+        assert song.artist_credits == []
 
     assert song.artist_name == ""
     assert song.album_name is None
@@ -211,6 +354,7 @@ def test_missing_optional_fields_are_stored_as_null(user_id):
     assert song.popularity_source is None
     assert song.explicit is None
     assert song.spotify_url is None
+    assert song.isrc is None
 
 
 def test_null_album_and_empty_artists_are_accepted(user_id):
@@ -314,3 +458,14 @@ def test_deleting_a_user_removes_their_list_but_keeps_songs(user_id):
 
     assert count(UserTopSong) == 0
     assert count(Song) == 1
+    assert count(SongArtist) == 2
+
+
+def test_deleting_a_song_removes_its_credits_but_keeps_artists(user_id):
+    with SessionLocal() as db:
+        save_top_songs(db, user_id, "medium_term", [make_track(1)])
+        db.delete(db.scalar(select(Song)))
+        db.commit()
+
+    assert count(SongArtist) == 0
+    assert count(Artist) == 2
