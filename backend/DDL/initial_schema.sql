@@ -20,7 +20,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    email VARCHAR(320) UNIQUE,
+    email VARCHAR(320),
+    password_hash TEXT NULL,
     display_name VARCHAR(255),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -46,6 +47,7 @@ CREATE TABLE spotify_accounts (
 
     spotify_user_id VARCHAR(255),
     display_name VARCHAR(255),
+    email VARCHAR(320),
 
     access_token TEXT,
     refresh_token TEXT,
@@ -333,8 +335,8 @@ CREATE TABLE song_artists (
 -- Additional indexes for common lookup and join patterns.
 -- ============================================================
 
-CREATE INDEX idx_users_email
-    ON users(email);
+CREATE UNIQUE INDEX uq_users_email_ci
+    ON users(lower(email));
 
 
 CREATE INDEX idx_spotify_accounts_user_id
