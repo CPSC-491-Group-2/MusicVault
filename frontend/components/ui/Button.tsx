@@ -42,8 +42,9 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
     "bg-olive text-blush hover:not-disabled:bg-green focus-visible:bg-green disabled:text-blush/45",
   secondary:
-    "bg-paper border-[1.5px] border-olive/25 text-olive hover:not-disabled:bg-blush disabled:text-olive/45",
-  quiet: "text-olive hover:not-disabled:bg-blush disabled:text-olive/45",
+    "bg-paper border-[1.5px] border-olive/25 text-olive hover:not-disabled:bg-blush hover:not-disabled:border-olive/45 disabled:text-olive/45",
+  quiet:
+    "relative isolate text-olive disabled:text-olive/45 before:absolute before:inset-0 before:-z-10 before:rounded-[inherit] before:bg-blush before:opacity-0 before:scale-90 before:transition-[opacity,transform,scale] before:duration-200 before:ease-mv hover:not-disabled:before:opacity-100 hover:not-disabled:before:scale-100",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
@@ -55,7 +56,9 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 export function Button(props: ButtonProps) {
   const classes = [
     "inline-flex items-center justify-center gap-2 font-medium disabled:cursor-not-allowed",
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-olive",
+    "transition-[background-color,border-color,color,transform,scale,outline-offset] duration-[200ms,200ms,200ms,150ms,150ms,150ms] ease-mv",
+    "active:not-disabled:scale-[0.98]",
+    "outline-offset-0 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-olive",
     VARIANT_CLASSES[props.variant],
     SIZE_CLASSES[props.size],
     props.className,

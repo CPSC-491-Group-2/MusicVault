@@ -21,10 +21,10 @@ const SIZE_CLASSES: Record<IconButtonSize, string> = {
 };
 
 const TONE_CLASSES: Record<IconButtonTone, string> = {
-  olive: "bg-olive text-blush",
-  blush: "bg-blush text-olive",
-  paper: "bg-paper text-olive",
-  green: "bg-green text-blush",
+  olive: "bg-olive text-blush hover:not-disabled:bg-green",
+  blush: "bg-blush text-olive hover:not-disabled:bg-orchid",
+  paper: "bg-paper text-olive hover:not-disabled:bg-blush",
+  green: "bg-green text-blush hover:not-disabled:bg-olive",
 };
 
 export function IconButton({
@@ -37,7 +37,9 @@ export function IconButton({
 }: IconButtonProps) {
   const classes = [
     "inline-flex items-center justify-center rounded-full",
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-olive",
+    "transition-[background-color,transform,scale,outline-offset] duration-[200ms,150ms,150ms,150ms] ease-mv",
+    "active:not-disabled:scale-[0.94]",
+    "outline-offset-0 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-olive",
     SIZE_CLASSES[size],
     TONE_CLASSES[tone],
     className,
