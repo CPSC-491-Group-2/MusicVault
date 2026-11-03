@@ -1,0 +1,32 @@
+# After setting hide_parameters=True on the engine
+# 2026-11-03 03:50:15 UTC, commit base 6db8c89 + working tree, Postgres 16 (local)
+# python -m pytest tests -m data_classification --strict-markers -v
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- backend/.venv/bin/python
+rootdir: backend
+configfile: pyproject.toml
+plugins: platformdirs-4.14.3
+collecting ... collected 405 items / 386 deselected / 19 selected
+
+tests/security/test_data_classification.py::test_every_model_column_is_classified PASSED [  5%]
+tests/security/test_data_classification.py::test_model_labels_match_inventory PASSED [ 10%]
+tests/security/test_data_classification.py::test_known_sensitive_fields_are_classified_correctly PASSED [ 15%]
+tests/security/test_data_classification.py::test_inventory_uses_only_defined_levels PASSED [ 21%]
+tests/security/test_data_classification.py::test_inventory_matches_live_schema PASSED [ 26%]
+tests/security/test_data_classification.py::test_unclassified_model_column_is_reported PASSED [ 31%]
+tests/security/test_data_classification.py::test_unknown_classification_is_reported PASSED [ 36%]
+tests/security/test_data_classification.py::test_duplicate_inventory_row_is_rejected PASSED [ 42%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[UserTopSong] PASSED [ 47%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[Song] PASSED [ 52%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[Artist] PASSED [ 57%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[SpotifyAccount] PASSED [ 63%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[User] PASSED [ 68%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[UserPreference] PASSED [ 73%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[SongArtist] PASSED [ 78%]
+tests/security/test_data_classification.py::test_response_schemas_have_no_restricted_fields PASSED [ 84%]
+tests/security/test_data_classification.py::test_user_responses_never_include_restricted_values PASSED [ 89%]
+tests/security/test_data_classification.py::test_database_errors_hide_bound_values PASSED [ 94%]
+tests/security/test_data_classification.py::test_spotify_tokens_are_not_stored_in_plaintext XFAIL [100%]
+
+================ 18 passed, 386 deselected, 1 xfailed in 0.23s =================

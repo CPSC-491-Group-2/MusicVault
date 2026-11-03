@@ -1,0 +1,65 @@
+# Database error test added, before setting hide_parameters on the engine
+# 2026-11-03 03:50:14 UTC, commit base 6db8c89 + working tree, Postgres 16 (local)
+# python -m pytest tests -m data_classification --strict-markers -v
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- backend/.venv/bin/python
+rootdir: backend
+configfile: pyproject.toml
+plugins: platformdirs-4.14.3
+collecting ... collected 405 items / 386 deselected / 19 selected
+
+tests/security/test_data_classification.py::test_every_model_column_is_classified PASSED [  5%]
+tests/security/test_data_classification.py::test_model_labels_match_inventory PASSED [ 10%]
+tests/security/test_data_classification.py::test_known_sensitive_fields_are_classified_correctly PASSED [ 15%]
+tests/security/test_data_classification.py::test_inventory_uses_only_defined_levels PASSED [ 21%]
+tests/security/test_data_classification.py::test_inventory_matches_live_schema PASSED [ 26%]
+tests/security/test_data_classification.py::test_unclassified_model_column_is_reported PASSED [ 31%]
+tests/security/test_data_classification.py::test_unknown_classification_is_reported PASSED [ 36%]
+tests/security/test_data_classification.py::test_duplicate_inventory_row_is_rejected PASSED [ 42%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[Song] PASSED [ 47%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[User] PASSED [ 52%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[UserTopSong] PASSED [ 57%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[UserPreference] PASSED [ 63%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[SongArtist] PASSED [ 68%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[Artist] PASSED [ 73%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[SpotifyAccount] PASSED [ 78%]
+tests/security/test_data_classification.py::test_response_schemas_have_no_restricted_fields PASSED [ 84%]
+tests/security/test_data_classification.py::test_user_responses_never_include_restricted_values PASSED [ 89%]
+tests/security/test_data_classification.py::test_database_errors_hide_bound_values FAILED [ 94%]
+tests/security/test_data_classification.py::test_spotify_tokens_are_not_stored_in_plaintext XFAIL [100%]
+
+=================================== FAILURES ===================================
+____________________ test_database_errors_hide_bound_values ____________________
+
+require_live_database = None
+
+    def test_database_errors_hide_bound_values(require_live_database):
+        """Routes log failed token saves with logger.exception, and SQLAlchemy
+        adds the statement's bound values to the error text unless the engine
+        sets hide_parameters. Division by zero is used because Postgres doesn't
+        echo the statement back for it, so only SQLAlchemy's copy is tested.
+    
+        Postgres itself can still echo values (psycopg2 binds them client side),
+        e.g. "LINE 1: ... 'token'" for type errors; see the assessment."""
+        with pytest.raises(DBAPIError) as caught, engine.connect() as connection:
+            connection.execute(
+                text("SELECT CAST(:token AS text), 1 / 0"),
+                {"token": "SENTINEL-access-token"},
+            )
+    
+>       assert "SENTINEL" not in str(caught.value)
+E       AssertionError: assert 'SENTINEL' not in '(psycopg2.e...e/e/21/9h9h)'
+E         
+E         'SENTINEL' is contained here:
+E           (psycopg2.errors.DivisionByZero) division by zero
+E           
+E           [SQL: SELECT CAST(%(token)s AS text), 1 / 0]
+E           [parameters: {'token': 'SENTINEL-access-token'}]
+E         ?                         ++++++++
+E           (Background on this error at: https://sqlalche.me/e/21/9h9h)
+
+tests/security/test_data_classification.py:262: AssertionError
+=========================== short test summary info ============================
+FAILED tests/security/test_data_classification.py::test_database_errors_hide_bound_values
+=========== 1 failed, 17 passed, 386 deselected, 1 xfailed in 0.23s ============
