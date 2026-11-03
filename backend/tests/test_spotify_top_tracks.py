@@ -196,7 +196,7 @@ def test_top_tracks_accepts_pagination_and_time_range():
     ],
 )
 def test_top_tracks_rejects_invalid_query_parameters(query_string):
-    """Invalid query parameters should fail validation."""
+    """Invalid query parameters return a controlled validation response."""
 
     app = create_app()
     app.config.update(TESTING=True)
@@ -206,6 +206,28 @@ def test_top_tracks_rejects_invalid_query_parameters(query_string):
     response = client.get(f"/api/v1/spotify/top-tracks{query_string}")
 
     assert response.status_code == 422
+    assert response.is_json
+
+    response_data = response.get_json()
+
+    assert isinstance(response_data, dict)
+    assert response_data.get("code") == 422
+    assert "errors" in response_data
+
+    response_text = response.get_data(as_text=True).lower()
+
+    sensitive_terms = [
+        "traceback",
+        "sqlalchemy",
+        "secret_key",
+        "client_secret",
+        "access_token",
+        "refresh_token",
+        "database_url",
+    ]
+
+    for term in sensitive_terms:
+        assert term not in response_text
 
 
 @pytest.mark.parametrize(
