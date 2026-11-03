@@ -31,7 +31,6 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(
         Text, nullable=True, info=classified(DataClass.RESTRICTED)
     )
-    nickname: Mapped[str | None] = mapped_column(String(50), nullable=True)
     display_name: Mapped[str | None] = mapped_column(
         String(255), nullable=True, info=classified(DataClass.CONFIDENTIAL)
     )

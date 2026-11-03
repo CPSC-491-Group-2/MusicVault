@@ -22,7 +22,6 @@ CREATE TABLE users (
 
     email VARCHAR(320),
     password_hash TEXT NULL,
-    nickname VARCHAR(50),
     display_name VARCHAR(255),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
