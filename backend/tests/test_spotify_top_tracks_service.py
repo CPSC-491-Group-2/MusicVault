@@ -1,5 +1,7 @@
 from unittest.mock import Mock, patch
 
+import pytest
+
 from services.spotify_service import SpotifyService
 
 
@@ -23,6 +25,7 @@ def make_spotify_track():
         "popularity": 75,
         "explicit": False,
         "external_urls": {"spotify": "https://open.spotify.com/track/track123"},
+        "external_ids": {"isrc": "USABC1234567"},
     }
 
 
@@ -43,7 +46,7 @@ def make_spotify_response(items=None):
 
 @patch("services.spotify_service.requests.get")
 def test_service_normalizes_successful_top_tracks(mock_get):
-    """Successful Spotify responses return normalized tracks."""
+    """Successful Spotify responses return complete normalized tracks."""
     mock_response = Mock()
     mock_response.status_code = 200
     mock_response.json.return_value = make_spotify_response()
@@ -53,14 +56,35 @@ def test_service_normalizes_successful_top_tracks(mock_get):
 
     result = service.get_normalized_user_top_tracks()
 
-    assert len(result["items"]) == 1
-    assert result["items"][0]["spotify_id"] == "track123"
-    assert result["items"][0]["title"] == "Example Song"
-    assert result["items"][0]["artists"] == [
-        {"spotify_id": "artist123", "name": "Example Artist"}
-    ]
-    assert result["items"][0]["album"]["name"] == "Example Album"
-    assert result["total"] == 1
+    assert result == {
+        "items": [
+            {
+                "spotify_id": "track123",
+                "title": "Example Song",
+                "artists": [
+                    {
+                        "spotify_id": "artist123",
+                        "name": "Example Artist",
+                    }
+                ],
+                "album": {
+                    "spotify_id": "album123",
+                    "name": "Example Album",
+                    "image_url": "https://example.com/album.jpg",
+                },
+                "duration_ms": 200000,
+                "popularity": 75,
+                "explicit": False,
+                "spotify_url": "https://open.spotify.com/track/track123",
+                "isrc": "USABC1234567",
+            }
+        ],
+        "total": 1,
+        "limit": 20,
+        "offset": 0,
+        "next": None,
+        "previous": None,
+    }
 
     mock_get.assert_called_once()
 
@@ -145,3 +169,30 @@ def test_service_does_not_expose_access_tokens(mock_get):
     assert mock_get.call_args.kwargs["headers"]["Authorization"] == (
         f"Bearer {secret_token}"
     )
+
+
+@pytest.mark.parametrize(
+    "invalid_track",
+    [
+        {**make_spotify_track(), "id": None},
+        {**make_spotify_track(), "name": ""},
+        {**make_spotify_track(), "artists": "invalid-artists"},
+    ],
+)
+@patch("services.spotify_service.requests.get")
+def test_service_rejects_malformed_spotify_track_data(
+    mock_get,
+    invalid_track,
+):
+    """Malformed Spotify data must fail instead of producing corrupted output."""
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = make_spotify_response(
+        items=[invalid_track]
+    )
+    mock_get.return_value = mock_response
+
+    service = SpotifyService("test-access-token")
+
+    with pytest.raises(ValueError):
+        service.get_normalized_user_top_tracks()
