@@ -6,9 +6,20 @@ from flask import g, jsonify, session
 from db.queries.user import get_user_by_id
 from db.session import SessionLocal
 
-# Set by the Spotify OAuth callback once login succeeds.
+# Shared session key for Spotify and local authentication.
 SESSION_USER_KEY = "user_id"
 
+def login_user(user_id: uuid.UUID) -> None:
+    """Establish a fresh authenticated MusicVault session."""
+
+    session.clear()
+    session[SESSION_USER_KEY] = str(user_id)
+
+
+def logout_user() -> None:
+    """Clear the current MusicVault session."""
+
+    session.clear()
 
 def _error_response(status_code, error, message):
     # A Response object (not a tuple) so flask-smorest passes it through

@@ -11,19 +11,12 @@ import {
 import { NAV_ROUTES, ROUTES, visit } from "../support/routes";
 
 // Known focus ring bugs, by path. Each one runs as a test.fixme until fixed.
-const FOCUS_RING_FIXMES: Record<string, string> = {
-  "/ui": "SearchField has no focus ring: its input sets outline-none and the field only thickens its border on focus-within. Where the 2px ring should go (the input or the whole field) is a design call.",
-};
+const FOCUS_RING_FIXMES: Record<string, string> = {};
 
 // Toggle chips to drive with the mouse and the keyboard.
 const CHIPS = [
   { path: "/", chip: "Rainy afternoon", fixme: "" },
-  {
-    path: "/ui",
-    chip: "Not selected",
-    fixme:
-      'The /ui gallery chips are static examples with no onPressedChange, so they never toggle. Making them interactive needs a call on their "Selected" and "Not selected" labels.',
-  },
+  { path: "/ui", chip: "Rainy afternoon", fixme: "" },
 ];
 
 test.describe("keyboard", { tag: "@a11y" }, () => {
@@ -64,23 +57,6 @@ test.describe("keyboard", { tag: "@a11y" }, () => {
       });
     });
   }
-
-  // Keeps the other controls on /ui (Button, IconButton, Chip) covered while the
-  // full /ui check above is a fixme. Delete it once SearchField has a ring.
-  test("UI components (/ui): every tab stop except the search fields shows a focus ring", async ({
-    page,
-  }) => {
-    await visit(page, "/ui");
-    const stops = await tabThrough(page, {
-      onStop: async (stop) => {
-        if (stop.role !== "searchbox") {
-          await expectVisibleFocus(page.locator(":focus"));
-        }
-      },
-    });
-
-    expect(stops.length).toBeGreaterThan(0);
-  });
 
   for (const route of NAV_ROUTES) {
     test(`shell nav marks only ${route.name} as the current page on ${route.path}`, async ({

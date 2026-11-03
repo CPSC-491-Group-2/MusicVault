@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 
 from flask import Blueprint, current_app, jsonify, redirect, request, session
 
-from app.auth import SESSION_USER_KEY
+from app.auth import login_user, logout_user
 from app.services.spotify_auth import (
     SpotifyAuthError,
     build_authorize_url,
@@ -115,11 +115,11 @@ def spotify_callback():
 
     with SessionLocal() as db:
         user = link_spotify_account(db, profile=profile, token=token)
-        user_id = str(user.id)
+        user_id = user.id
 
-    # Start a fresh session on login so nothing set before it carries over.
-    session.clear()
-    session[SESSION_USER_KEY] = user_id
+    # Establish a fresh MusicVault session.
+    login_user(user_id)
+
     return _redirect_to_frontend()
 
 
@@ -127,5 +127,5 @@ def spotify_callback():
 def logout():
     # POST only, so a link or image on another site can't log the user out;
     # SameSite=Lax also keeps the cookie off cross-site POSTs.
-    session.clear()
+    logout_user()
     return "", 204

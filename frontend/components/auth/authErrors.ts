@@ -15,6 +15,8 @@ const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   invalid_credentials:
     "That email and password don't match. Check them and try again.",
   email_taken: "An account with that email already exists. Log in instead.",
+  service_unavailable:
+    "Email sign-in isn't available right now. Try Spotify, or check back soon.",
 };
 
 function isAuthErrorCode(code: string): code is AuthErrorCode {

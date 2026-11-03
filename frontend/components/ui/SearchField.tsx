@@ -15,7 +15,7 @@ export function SearchField({
   ...rest
 }: SearchFieldProps) {
   const wrapperClasses = [
-    "flex h-[68px] w-full items-center gap-3 rounded-[20px] bg-paper px-5 border-[1.5px] border-olive/14 focus-within:border-2 focus-within:border-olive",
+    "flex h-[68px] w-full items-center gap-3 rounded-[20px] bg-paper px-5 border-[1.5px] border-olive/14 focus-within:border-2 focus-within:border-olive focus-within:outline-2 focus-within:outline-solid focus-within:outline-offset-2 focus-within:outline-olive",
     className,
   ]
     .filter(Boolean)

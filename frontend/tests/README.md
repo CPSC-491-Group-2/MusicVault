@@ -121,7 +121,7 @@ test("shows the backend status", async ({ page, mockApi }) => {
 - Options: `{ status: 201 }` for another status (the default is 200), `{ method: "POST" }` to answer only that method.
 - Mock before the page makes the request, usually before `page.goto`.
 - `mockApi.calls` lists the URLs nothing mocked, in order.
-- Only requests made by the browser can be mocked. A fetch inside a server component runs on the Next server and goes straight to `BACKEND_URL`. No page does that today.
+- Only requests made by the browser can be mocked. A fetch inside a server component runs on the Next server and goes straight to `BACKEND_URL`. The session check in `lib/session.ts` does that, so the logged-in `(app)` pages can't rely on `mockApi` for it. Instead, `playwright.config.ts` sets `PLAYWRIGHT_TEST=1` for the test server: when that flag is set and `BACKEND_URL` is not (deployed builds always set it), `requireUser()` returns a fixed test user, so the shell renders without a backend. `/login` and `/signup` use the real cookie check, so they stay logged out in tests.
 
 ## Checking accessibility of your feature
 

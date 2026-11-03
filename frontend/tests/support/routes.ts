@@ -13,6 +13,8 @@ export type RouteEntry = {
 // over this list, so adding a page here is all it takes to get it checked.
 export const ROUTES: RouteEntry[] = [
   { name: "Splash", path: "/", heading: "Music you'd love, from artists you haven't heard yet.", area: "marketing" },
+  { name: "Log in", path: "/login", heading: "Log in", area: "marketing" },
+  { name: "Sign up", path: "/signup", heading: "Create your account", area: "marketing" },
   { name: "Home", path: "/dashboard", heading: "Welcome back", area: "app", inNav: true },
   { name: "Swipe", path: "/swipe", heading: "Swipe to tune", area: "app", inNav: true },
   { name: "Vault", path: "/library", heading: "Your vault", area: "app", inNav: true },

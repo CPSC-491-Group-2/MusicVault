@@ -7,13 +7,13 @@ import { SpotifyConnectionPanel } from "@/components/account/SpotifyConnectionPa
 import { authErrorMessage } from "@/components/auth/authErrors";
 import { LoginPanel } from "@/components/auth/LoginPanel";
 import { SignupPanel } from "@/components/auth/SignupPanel";
+import { ToggleChip } from "@/components/gallery/ToggleChip";
 import { AccountChip } from "@/components/shell/AccountChip";
 import {
   Avatar,
   Button,
   ChartIcon,
   CheckIcon,
-  Chip,
   CloseIcon,
   DownloadIcon,
   FormMessage,
@@ -196,16 +196,14 @@ export default function UiGalleryPage() {
       </Section>
 
       <Section title="Chip">
-        <Chip pressed={false}>Not selected</Chip>
-        <Chip pressed>Selected</Chip>
+        <ToggleChip>Rainy afternoon</ToggleChip>
+        <ToggleChip defaultPressed>Focus</ToggleChip>
 
         <Surface tone="olive" className="flex flex-wrap items-center gap-4">
-          <Chip tone="dark" pressed={false}>
-            Dark, not selected
-          </Chip>
-          <Chip tone="dark" pressed>
-            Dark, selected
-          </Chip>
+          <ToggleChip tone="dark">Sunday morning</ToggleChip>
+          <ToggleChip tone="dark" defaultPressed>
+            Slow dancing
+          </ToggleChip>
         </Surface>
       </Section>
 

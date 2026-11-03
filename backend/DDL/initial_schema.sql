@@ -20,7 +20,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    email VARCHAR(320) UNIQUE,
+    email VARCHAR(320),
+    password_hash TEXT NULL,
     display_name VARCHAR(255),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -46,6 +47,7 @@ CREATE TABLE spotify_accounts (
 
     spotify_user_id VARCHAR(255),
     display_name VARCHAR(255),
+    email VARCHAR(320),
 
     access_token TEXT,
     refresh_token TEXT,
@@ -72,6 +74,7 @@ CREATE TABLE songs (
     album_name VARCHAR(500),
 
     spotify_track_id VARCHAR(255) UNIQUE,
+    isrc VARCHAR(32),
 
     duration_ms INTEGER,
     explicit BOOLEAN,
@@ -275,12 +278,65 @@ CREATE TABLE user_top_songs (
 
 
 -- ============================================================
--- 10. INDEXES
+-- 10. ARTISTS
+-- Canonical MusicVault artist records, shared across songs.
+-- genres is NULL until a genre lookup has run for the artist;
+-- an empty array means the lookup ran and found none.
+-- ============================================================
+
+CREATE TABLE artists (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    name VARCHAR(500) NOT NULL,
+
+    spotify_artist_id VARCHAR(255) UNIQUE,
+
+    genres JSONB,
+    genres_source VARCHAR(100),
+    genres_fetched_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT chk_artist_genres_array
+        CHECK (genres IS NULL OR jsonb_typeof(genres) = 'array')
+);
+
+
+-- ============================================================
+-- 11. SONG ARTISTS
+-- The credited artists of each song, in credit order.
+-- songs.artist_name stays as the display string.
+-- ============================================================
+
+CREATE TABLE song_artists (
+    song_id UUID NOT NULL
+        REFERENCES songs(id)
+        ON DELETE CASCADE,
+
+    artist_id UUID NOT NULL
+        REFERENCES artists(id)
+        ON DELETE CASCADE,
+
+    position INTEGER NOT NULL,
+
+    PRIMARY KEY (song_id, artist_id),
+
+    CONSTRAINT uq_song_artists_song_position
+        UNIQUE (song_id, position),
+
+    CONSTRAINT chk_song_artists_position_positive
+        CHECK (position > 0)
+);
+
+
+-- ============================================================
+-- 12. INDEXES
 -- Additional indexes for common lookup and join patterns.
 -- ============================================================
 
-CREATE INDEX idx_users_email
-    ON users(email);
+CREATE UNIQUE INDEX uq_users_email_ci
+    ON users(lower(email));
 
 
 CREATE INDEX idx_spotify_accounts_user_id
@@ -351,8 +407,16 @@ CREATE INDEX idx_user_top_songs_song_id
     ON user_top_songs(song_id);
 
 
+CREATE INDEX idx_songs_isrc
+    ON songs(isrc);
+
+
+CREATE INDEX idx_song_artists_artist_id
+    ON song_artists(artist_id);
+
+
 -- ============================================================
--- 11. SCHEMA RELATIONSHIP SUMMARY
+-- 13. SCHEMA RELATIONSHIP SUMMARY
 -- ============================================================
 
 /*
@@ -405,11 +469,22 @@ CREATE INDEX idx_user_top_songs_song_id
       | many : 1
       v
     songs
+
+
+    songs
+      |
+      | 1 : many
+      v
+    song_artists
+      |
+      | many : 1
+      v
+    artists
 */
 
 
 -- ============================================================
--- 12. IMPORTANT DESIGN NOTES
+-- 14. IMPORTANT DESIGN NOTES
 -- ============================================================
 
 /*
@@ -444,4 +519,12 @@ CREATE INDEX idx_user_top_songs_song_id
    Saving a user's top songs for a time range replaces the
    previous list for that range. The unique (user_id, time_range,
    rank) constraint also serves the "list in rank order" lookup.
+
+10. Genres belong to artists, not songs.
+    Spotify only exposes genres on artist objects, so a song's
+    genres are the union of its credited artists' genres.
+
+11. songs.isrc is not unique.
+    The same recording can be released under several Spotify track
+    IDs. It is kept for looking songs up in other music databases.
 */

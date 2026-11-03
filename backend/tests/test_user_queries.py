@@ -10,6 +10,7 @@ from db.queries.user import (
     delete_user,
     get_user_by_email,
     get_user_by_id,
+    normalize_email,
     update_user,
 )
 from models.spotify_account import SpotifyAccount
@@ -106,3 +107,92 @@ def test_delete_user_cascades_to_spotify_account(db_session):
     delete_user(db_session, user.id)
 
     assert db_session.get(SpotifyAccount, spotify_account_id) is None
+
+# ============================================================
+# LOCAL AUTHENTICATION DATABASE TESTS
+# ============================================================
+
+
+def test_normalize_email():
+    email = normalize_email("  MusicFan@Example.COM  ")
+
+    assert email == "musicfan@example.com"
+
+
+def test_create_user_normalizes_email(db_session):
+    user = create_user(
+        db_session,
+        email="  MusicFan@Example.COM  ",
+        display_name="Music Fan",
+    )
+
+    assert user.email == "musicfan@example.com"
+
+
+def test_get_user_by_email_case_insensitive(db_session):
+    created = create_user(
+        db_session,
+        email="musicfan@example.com",
+    )
+
+    fetched = get_user_by_email(
+        db_session,
+        "MUSICFAN@EXAMPLE.COM",
+    )
+
+    assert fetched is not None
+    assert fetched.id == created.id
+
+
+def test_duplicate_email_different_case_rejected(db_session):
+    create_user(
+        db_session,
+        email="musicfan@example.com",
+    )
+
+    with pytest.raises(IntegrityError):
+        create_user(
+            db_session,
+            email="MUSICFAN@EXAMPLE.COM",
+        )
+
+
+def test_create_user_with_password_hash(db_session):
+    # Dummy value for database storage testing only.
+    # No password hashing or verification is performed.
+    test_hash = "dummy-hash-not-for-authentication"
+
+    user = create_user(
+        db_session,
+        email="local@example.com",
+        display_name="Local User",
+        password_hash=test_hash,
+    )
+
+    assert user.id is not None
+    assert user.email == "local@example.com"
+    assert user.password_hash == test_hash
+
+
+def test_password_hash_requires_email(db_session):
+    with pytest.raises(ValueError):
+        create_user(
+            db_session,
+            password_hash="dummy-hash-not-for-authentication",
+        )
+
+
+def test_update_user_normalizes_email(db_session):
+    user = create_user(
+        db_session,
+        email="original@example.com",
+    )
+
+    updated = update_user(
+        db_session,
+        user.id,
+        email="  UPDATED@EXAMPLE.COM  ",
+    )
+
+    assert updated is not None
+    assert updated.email == "updated@example.com"
