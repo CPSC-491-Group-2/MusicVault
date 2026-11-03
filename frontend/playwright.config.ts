@@ -44,6 +44,7 @@ export default defineConfig({
           ? `npm run build && npm run start -- -p ${PORT}`
           : `npm run dev -- -p ${PORT}`,
         url: `http://localhost:${PORT}`,
+        env: { PLAYWRIGHT_TEST: "1" },
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
       },
