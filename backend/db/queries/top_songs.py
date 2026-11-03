@@ -98,8 +98,8 @@ def _unique_tracks(tracks: list[dict]) -> list[dict]:
 
 
 def _upsert_song(db: Session, track: dict) -> Song:
-    # Artists are looked up first: those queries autoflush the session, and a
-    # new song must not be flushed before its required fields are set.
+    # Artists are resolved first, because _upsert_artists flushes the session
+    # and a new song must not be flushed before its required fields are set.
     artists = track.get("artists") or []
     credited = _upsert_artists(db, artists)
 
@@ -146,6 +146,9 @@ def _upsert_artists(db: Session, artists: list[dict]) -> list[Artist]:
         if artist is None:
             artist = Artist(spotify_artist_id=spotify_artist_id, name=name)
             db.add(artist)
+            # SessionLocal doesn't autoflush, so without this a later track in
+            # the same save wouldn't find the artist and would add it again.
+            db.flush()
         artist.name = name
         credited.append(artist)
     return credited

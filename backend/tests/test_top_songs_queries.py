@@ -266,6 +266,20 @@ def test_new_artists_have_unknown_genres(user_id):
         assert set(db.scalars(select(Artist.genres))) == {None}
 
 
+def test_none_is_stored_as_sql_null_not_json_null(clean_database):
+    with SessionLocal() as db:
+        song = Song(title="Unknown", artist_name="", audio_features=None)
+        song.artist_credits = [
+            SongArtist(artist=Artist(name="Unknown", genres=None), position=1)
+        ]
+        db.add(song)
+        db.commit()
+
+    with SessionLocal() as db:
+        assert db.scalar(select(func.count()).where(Artist.genres.is_(None))) == 1
+        assert db.scalar(select(func.count()).where(Song.audio_features.is_(None))) == 1
+
+
 def test_artist_genres_must_be_an_array(user_id):
     with SessionLocal() as db:
         db.add(Artist(name="Bad Genres", genres={"pop": True}))

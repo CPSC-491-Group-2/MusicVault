@@ -21,8 +21,6 @@ from __future__ import annotations
 import json
 import os
 import random
-import uuid
-from pathlib import Path
 
 import pytest
 
@@ -34,51 +32,18 @@ from app.services.similarity import (
     rank_candidates,
     track_features_from_song,
 )
-from models.artist import Artist, SongArtist
-from models.song import Song
+from recommendation_fixtures import (
+    KEY_BY_TRACK_ID,
+    PROFILES,
+    SNAPSHOT_FILE,
+    build_songs,
+    snapshot,
+)
 
 pytestmark = pytest.mark.recommendation
 
-DATA_DIR = Path(__file__).parent / "data"
-DATASET_FILE = DATA_DIR / "recommendation_dataset.json"
-SNAPSHOT_FILE = DATA_DIR / "recommendation_expected.json"
-
-# Fixed namespace, so every run gives each dataset entry the same UUID.
-NAMESPACE = uuid.UUID("6f1c2a3e-0000-4000-8000-000000000491")
-
-
-def stable_id(kind, key):
-    return uuid.uuid5(NAMESPACE, f"{kind}:{key}")
-
-
-def load_dataset():
-    """Build in-memory Song and Artist rows from the dataset file."""
-    data = json.loads(DATASET_FILE.read_text())
-    artists = {
-        key: Artist(id=stable_id("artist", key), name=a["name"], genres=a["genres"])
-        for key, a in data["artists"].items()
-    }
-    songs = {}
-    for key, s in data["songs"].items():
-        song = Song(
-            id=stable_id("song", key),
-            title=key,
-            artist_name=", ".join(artists[a].name for a in s["artists"]),
-            audio_features=s["audio"],
-            popularity=s["popularity"],
-        )
-        song.artist_credits = [
-            SongArtist(artist=artists[a], position=position)
-            for position, a in enumerate(s["artists"], start=1)
-        ]
-        songs[key] = song
-    profiles = {key: p["seeds"] for key, p in data["profiles"].items()}
-    return songs, profiles
-
-
-SONGS, PROFILES = load_dataset()
+SONGS = build_songs()
 FEATURES = {key: track_features_from_song(song) for key, song in SONGS.items()}
-KEY_BY_TRACK_ID = {features.track_id: key for key, features in FEATURES.items()}
 
 
 def recommend(profile, config=ScoringConfig(), candidates=None):
@@ -90,22 +55,6 @@ def recommend(profile, config=ScoringConfig(), candidates=None):
 
 def keys(recommendations):
     return [KEY_BY_TRACK_ID[r.track_id] for r in recommendations]
-
-
-def snapshot(recommendations):
-    """A ranking as plain JSON data; scores rounded to keep the file stable."""
-    return [
-        {
-            "song": KEY_BY_TRACK_ID[r.track_id],
-            "score": round(r.score, 6),
-            "reason": r.reason,
-            "components": {
-                name: None if value is None else round(value, 6)
-                for name, value in r.components.items()
-            },
-        }
-        for r in recommendations
-    ]
 
 
 def current_snapshot():
