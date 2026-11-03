@@ -1,0 +1,77 @@
+table,column,classification,category,rationale
+users,id,confidential,User identifier,Links every per-user row back to one person
+users,email,confidential,Contact PII,Directly identifies a person
+users,password_hash,restricted,Credential,Hash of a login secret; offline cracking would expose the password
+users,display_name,confidential,Profile PII,User-chosen name that can identify a person
+users,created_at,internal,System metadata,Row audit timestamp
+users,updated_at,internal,System metadata,Row audit timestamp
+spotify_accounts,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+spotify_accounts,user_id,confidential,User identifier,Foreign key to users.id
+spotify_accounts,spotify_account_id,confidential,External account identifier,Identifies the person's Spotify account
+spotify_accounts,spotify_user_id,confidential,External account identifier,Identifies the person's Spotify account
+spotify_accounts,display_name,confidential,Profile PII,Spotify profile name
+spotify_accounts,email,confidential,Contact PII,Spotify account email
+spotify_accounts,access_token,restricted,Credential,Bearer token granting access to the user's Spotify account
+spotify_accounts,refresh_token,restricted,Credential,Long-lived token that can mint new access tokens
+spotify_accounts,token_expires_at,internal,System metadata,Token lifetime; reveals nothing without the token
+spotify_accounts,scope,confidential,Authorization metadata,Shows which parts of the user's Spotify account MusicVault can read
+spotify_accounts,created_at,internal,System metadata,Row audit timestamp
+spotify_accounts,updated_at,internal,System metadata,Row audit timestamp
+songs,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+songs,title,public,Catalog metadata,Published track metadata from Spotify
+songs,artist_name,public,Catalog metadata,Published track metadata from Spotify
+songs,album_name,public,Catalog metadata,Published track metadata from Spotify
+songs,spotify_track_id,public,Catalog metadata,Public Spotify catalog ID
+songs,isrc,public,Catalog metadata,Public industry recording code
+songs,duration_ms,public,Catalog metadata,Published track metadata from Spotify
+songs,explicit,public,Catalog metadata,Published track metadata from Spotify
+songs,popularity,public,Catalog metadata,Third-party published metric
+songs,popularity_source,internal,System metadata,Which provider supplied the value
+songs,audio_features,public,Catalog metadata,Third-party published audio attributes
+songs,audio_features_source,internal,System metadata,Which provider supplied the value
+songs,spotify_url,public,Catalog metadata,Public Spotify link
+songs,album_image_url,public,Catalog metadata,Public cover art link
+songs,created_at,internal,System metadata,Row audit timestamp
+songs,updated_at,internal,System metadata,Row audit timestamp
+user_preferences,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+user_preferences,user_id,confidential,User identifier,Foreign key to users.id
+user_preferences,song_id,internal,System metadata,Foreign key to a public song
+user_preferences,preference_type,confidential,User behavior,A person's likes and dislikes
+user_preferences,rating,confidential,User behavior,A person's rating of a song
+user_preferences,created_at,internal,System metadata,Row audit timestamp
+user_preferences,updated_at,internal,System metadata,Row audit timestamp
+recommendations,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+recommendations,user_id,confidential,User identifier,Foreign key to users.id
+recommendations,song_id,internal,System metadata,Foreign key to a public song
+recommendations,score,confidential,Derived user profile,Inferred from the person's listening and preferences
+recommendations,reason,confidential,Derived user profile,Explains what was inferred about the person's taste
+recommendations,algorithm_version,internal,System metadata,Version of the ranking code
+recommendations,generated_at,internal,System metadata,Row audit timestamp
+charts,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+charts,name,public,Chart data,Published chart name
+charts,source,public,Chart data,Published chart provider
+charts,chart_date,public,Chart data,Published chart date
+charts,created_at,internal,System metadata,Row audit timestamp
+charts,updated_at,internal,System metadata,Row audit timestamp
+chart_entries,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+chart_entries,chart_id,internal,System metadata,Foreign key to a public chart
+chart_entries,song_id,internal,System metadata,Foreign key to a public song
+chart_entries,position,public,Chart data,Published chart position
+chart_entries,created_at,internal,System metadata,Row audit timestamp
+user_top_songs,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+user_top_songs,user_id,confidential,User identifier,Foreign key to users.id
+user_top_songs,song_id,internal,System metadata,Foreign key to a public song
+user_top_songs,time_range,confidential,User behavior,Part of the person's listening history
+user_top_songs,rank,confidential,User behavior,The person's listening history
+user_top_songs,fetched_at,internal,System metadata,When the listening history was last synced
+artists,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+artists,name,public,Catalog metadata,Published artist metadata
+artists,spotify_artist_id,public,Catalog metadata,Public Spotify catalog ID
+artists,genres,public,Catalog metadata,Published artist genres
+artists,genres_source,internal,System metadata,Which provider supplied the value
+artists,genres_fetched_at,internal,System metadata,When the genre lookup ran
+artists,created_at,internal,System metadata,Row audit timestamp
+artists,updated_at,internal,System metadata,Row audit timestamp
+song_artists,song_id,internal,System metadata,Foreign key to a public song
+song_artists,artist_id,internal,System metadata,Foreign key to a public artist
+song_artists,position,public,Catalog metadata,Published credit order

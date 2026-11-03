@@ -1,0 +1,105 @@
+# Negative test: users.nickname added to the DDL and User model with no classification
+# 2026-11-03 03:50:29 UTC, commit base 6db8c89 + working tree, Postgres 16 (local)
+# python -m pytest tests -m data_classification --strict-markers -v
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- backend/.venv/bin/python
+rootdir: backend
+configfile: pyproject.toml
+plugins: platformdirs-4.14.3
+collecting ... collected 405 items / 386 deselected / 19 selected
+
+tests/security/test_data_classification.py::test_every_model_column_is_classified FAILED [  5%]
+tests/security/test_data_classification.py::test_model_labels_match_inventory FAILED [ 10%]
+tests/security/test_data_classification.py::test_known_sensitive_fields_are_classified_correctly PASSED [ 15%]
+tests/security/test_data_classification.py::test_inventory_uses_only_defined_levels PASSED [ 21%]
+tests/security/test_data_classification.py::test_inventory_matches_live_schema FAILED [ 26%]
+tests/security/test_data_classification.py::test_unclassified_model_column_is_reported PASSED [ 31%]
+tests/security/test_data_classification.py::test_unknown_classification_is_reported PASSED [ 36%]
+tests/security/test_data_classification.py::test_duplicate_inventory_row_is_rejected PASSED [ 42%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[Artist] PASSED [ 47%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[SongArtist] PASSED [ 52%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[UserPreference] PASSED [ 57%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[Song] PASSED [ 63%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[User] PASSED [ 68%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[SpotifyAccount] PASSED [ 73%]
+tests/security/test_data_classification.py::test_model_repr_hides_sensitive_values[UserTopSong] PASSED [ 78%]
+tests/security/test_data_classification.py::test_response_schemas_have_no_restricted_fields PASSED [ 84%]
+tests/security/test_data_classification.py::test_user_responses_never_include_restricted_values PASSED [ 89%]
+tests/security/test_data_classification.py::test_database_errors_hide_bound_values PASSED [ 94%]
+tests/security/test_data_classification.py::test_spotify_tokens_are_not_stored_in_plaintext XFAIL [100%]
+
+=================================== FAILURES ===================================
+____________________ test_every_model_column_is_classified _____________________
+
+    def test_every_model_column_is_classified():
+>       assert classification_problems(Base.metadata) == []
+E       AssertionError: assert ['users.nickn...assification'] == []
+E         
+E         Left contains one more item: 'users.nickname: no classification'
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E         - []
+E         + [
+E         +     'users.nickname: no classification',
+E         + ]
+
+tests/security/test_data_classification.py:39: AssertionError
+______________________ test_model_labels_match_inventory _______________________
+
+    def test_model_labels_match_inventory():
+        inventory = load_inventory()
+        mismatches = {
+            name: {"model": label, "inventory": inventory.get(name)}
+            for name, label in column_classifications(Base.metadata).items()
+            if name not in inventory or inventory[name] != label
+        }
+>       assert mismatches == {}
+E       AssertionError: assert {'users.nickn...ntory': None}} == {}
+E         
+E         Left contains 1 more item:
+E         {'users.nickname': {'inventory': None, 'model': None}}
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E         - {}
+E         + {...
+E         
+E         ...Full output truncated, use '-vv' to show
+
+tests/security/test_data_classification.py:49: AssertionError
+______________________ test_inventory_matches_live_schema ______________________
+
+require_live_database = None
+
+    def test_inventory_matches_live_schema(require_live_database):
+        """Covers tables without a model too, e.g. recommendations and charts."""
+        with engine.connect() as connection:
+            schema = {
+                f"{table}.{column}"
+                for table, column in connection.execute(
+                    text(
+                        "SELECT table_name, column_name FROM information_schema.columns "
+                        "WHERE table_schema = 'public'"
+                    )
+                )
+            }
+        inventory = set(load_inventory())
+    
+>       assert sorted(schema - inventory) == [], "columns missing from the inventory"
+E       AssertionError: columns missing from the inventory
+E       assert ['users.nickname'] == []
+E         
+E         Left contains one more item: 'users.nickname'
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E         - []
+E         + [
+E         +     'users.nickname',
+E         + ]
+
+tests/security/test_data_classification.py:114: AssertionError
+=========================== short test summary info ============================
+FAILED tests/security/test_data_classification.py::test_every_model_column_is_classified
+FAILED tests/security/test_data_classification.py::test_model_labels_match_inventory
+FAILED tests/security/test_data_classification.py::test_inventory_matches_live_schema
+=========== 3 failed, 15 passed, 386 deselected, 1 xfailed in 0.23s ============

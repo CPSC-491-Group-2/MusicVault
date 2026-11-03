@@ -35,6 +35,11 @@ def pytest_configure(config):
         "recommendation: recommendation scoring and ranking tests, run as their "
         "own CI job",
     )
+    config.addinivalue_line(
+        "markers",
+        "data_classification: SOC 2 data classification checks (C-1), "
+        "run as their own CI job",
+    )
 
 
 @pytest.fixture
