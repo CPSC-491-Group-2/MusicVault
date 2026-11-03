@@ -25,6 +25,8 @@ from app.services.similarity import (
 from models.artist import Artist, SongArtist
 from models.song import Song
 
+pytestmark = pytest.mark.recommendation
+
 
 def track(track_id, artists=(), genres=(), audio=None, popularity=None):
     return TrackFeatures(
@@ -37,7 +39,7 @@ def track(track_id, artists=(), genres=(), audio=None, popularity=None):
 
 
 def test_algorithm_version_is_set():
-    assert ALGORITHM_VERSION == "similarity-v1"
+    assert ALGORITHM_VERSION == "similarity-v2"
 
 
 # --- overlap / artist / genre -----------------------------------------------
@@ -87,11 +89,23 @@ def test_identical_audio_features_score_one():
     assert audio_similarity(track("a", audio=audio), track("b", audio=audio)) == 1.0
 
 
-def test_unit_scale_features_compare_directly():
+def test_unit_scale_features_use_a_half_scale_range():
     a = track("a", audio={"energy": 0.2, "valence": 0.5})
     b = track("b", audio={"energy": 0.6, "valence": 0.5})
-    # Differences 0.4 and 0.0 -> mean distance 0.2.
-    assert audio_similarity(a, b) == pytest.approx(0.8)
+    # Distances 0.4 / 0.5 = 0.8 and 0.0 -> mean distance 0.4.
+    assert audio_similarity(a, b) == pytest.approx(0.6)
+
+
+def test_unit_scale_differences_of_half_or_more_count_as_completely_different():
+    a, b = track("a", audio={"energy": 0.2}), track("b", audio={"energy": 0.9})
+    assert audio_similarity(a, b) == 0.0
+
+
+def test_audio_needs_the_minimum_number_of_shared_features():
+    a = track("a", audio={"energy": 0.5, "valence": 0.5, "tempo": 100})
+    b = track("b", audio={"energy": 0.5, "valence": 0.5})
+    assert audio_similarity(a, b, min_features=3) is None
+    assert audio_similarity(a, b, min_features=2) == 1.0
 
 
 def test_tempo_is_scaled_by_its_range_and_capped():
@@ -135,9 +149,14 @@ def test_audio_is_unknown_without_shared_features():
 # --- combined score ---------------------------------------------------------
 
 
+# Three shared features, each 0.25 apart (half their 0.5 range): audio 0.5.
+AUDIO_A = {"energy": 0.5, "valence": 0.5, "danceability": 0.5}
+AUDIO_B = {"energy": 0.25, "valence": 0.25, "danceability": 0.25}
+
+
 def test_score_is_weighted_mean_of_components():
-    a = track("a", {"x"}, {"pop"}, {"energy": 0.5})
-    b = track("b", {"x"}, {"rock"}, {"energy": 0.0})
+    a = track("a", {"x"}, {"pop"}, AUDIO_A)
+    b = track("b", {"x"}, {"rock"}, AUDIO_B)
     result = similarity(a, b)
 
     assert result.components == {"artist": 1.0, "genre": 0.0, "audio": 0.5}
@@ -146,13 +165,28 @@ def test_score_is_weighted_mean_of_components():
 
 
 def test_missing_components_are_left_out_and_weights_rescaled():
-    a = track("a", artists={"x"}, audio={"energy": 0.5})
-    b = track("b", artists={"x"}, audio={"energy": 0.0})
+    a = track("a", artists={"x"}, audio=AUDIO_A)
+    b = track("b", artists={"x"}, audio=AUDIO_B)
     result = similarity(a, b)
 
     assert result.components["genre"] is None
     # (0.35 * 1 + 0.30 * 0.5) / (0.35 + 0.30)
     assert result.score == pytest.approx(0.5 / 0.65)
+
+
+def test_too_few_shared_audio_features_leave_audio_out():
+    a = track("a", artists={"x"}, audio={"energy": 0.5})
+    b = track("b", artists={"x"}, audio={"energy": 0.0})
+    result = similarity(a, b)
+    assert result.components["audio"] is None
+    assert result.score == 1.0
+
+
+def test_min_audio_features_is_tunable():
+    a = track("a", audio={"energy": 0.5})
+    b = track("b", audio={"energy": 0.25})
+    result = similarity(a, b, ScoringConfig(min_audio_features=1))
+    assert result.components["audio"] == pytest.approx(0.5)
 
 
 def test_artist_only_data_scores_on_artists_alone():
@@ -199,6 +233,9 @@ def test_scores_stay_between_zero_and_one():
         {"popularity_penalty": -0.1},
         {"popularity_penalty": 1.1},
         {"audio_feature_ranges": {"tempo": 0}},
+        {"min_audio_features": 0},
+        {"missing_data_score": -0.1},
+        {"missing_data_score": 1.5},
     ],
 )
 def test_invalid_config_is_rejected(kwargs):
@@ -283,6 +320,41 @@ def test_seeds_without_a_component_do_not_dilute_it():
     assert result.score == 1.0
 
 
+def test_candidate_missing_data_the_seed_has_scores_zero():
+    seeds = [track("seed", artists={"x"}, genres={"pop"})]
+    [result] = rank_candidates(seeds, [track("c", artists={"x"})])
+    # Genre counts as no match instead of being left out: (0.35 * 1) / 0.70.
+    assert result.components["genre"] == 0.0
+    assert result.score == pytest.approx(0.5)
+
+
+def test_sparse_candidates_rank_below_real_matches():
+    seeds = [track("seed", {"x"}, {"pop"}, AUDIO_A)]
+    candidates = [
+        # Only one audio feature, which happens to match.
+        track("sparse", artists={"z"}, audio={"energy": 0.5}),
+        track("real-match", artists={"z"}, genres={"pop"}, audio=AUDIO_B),
+    ]
+    ranked = rank_candidates(seeds, candidates)
+    assert [r.track_id for r in ranked] == ["real-match", "sparse"]
+    assert ranked[1].score == 0.0
+
+
+def test_missing_data_score_is_tunable():
+    seeds = [track("seed", artists={"x"}, genres={"pop"})]
+    config = ScoringConfig(missing_data_score=0.5)
+    [result] = rank_candidates(seeds, [track("c", artists={"x"})], config)
+    assert result.components["genre"] == 0.5
+    assert result.score == pytest.approx(0.75)
+
+
+def test_data_neither_song_has_is_still_left_out():
+    seeds = [track("seed", artists={"x"})]
+    [result] = rank_candidates(seeds, [track("c", artists={"x"})])
+    assert result.components == {"artist": 1.0, "genre": None, "audio": None}
+    assert result.score == 1.0
+
+
 def test_limit_keeps_the_top_results():
     seeds = [track("seed", artists={"x"})]
     candidates = [track(name, artists={"x"}) for name in ("a", "b", "c")]
@@ -326,12 +398,12 @@ def test_popularity_is_ignored_by_default():
     [
         (track("c", artists={"x"}, genres={"jazz"}), "artist"),
         (track("c", artists={"z"}, genres={"pop"}), "genre"),
-        (track("c", artists={"z"}, audio={"energy": 0.5}), "audio"),
+        (track("c", artists={"z"}, audio=AUDIO_A), "audio"),
         (track("c", artists={"z"}), None),
     ],
 )
 def test_reason_is_the_strongest_component(candidate, expected_reason):
-    seeds = [track("seed", {"x"}, {"pop"}, {"energy": 0.5})]
+    seeds = [track("seed", {"x"}, {"pop"}, AUDIO_A)]
     [result] = rank_candidates(seeds, [candidate])
     assert result.reason == expected_reason
 
