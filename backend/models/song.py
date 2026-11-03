@@ -31,7 +31,10 @@ class Song(Base):
     explicit: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     popularity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     popularity_source: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    audio_features: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # none_as_null stores None as SQL NULL rather than JSON null.
+    audio_features: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
     audio_features_source: Mapped[str | None] = mapped_column(
         String(100), nullable=True
     )

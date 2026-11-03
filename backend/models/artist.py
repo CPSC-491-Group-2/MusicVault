@@ -27,7 +27,10 @@ class Artist(Base):
         String(255), unique=True, nullable=True
     )
     # None until a genre lookup has run; [] means it ran and found none.
-    genres: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    # none_as_null stores None as SQL NULL; JSON null would fail the check.
+    genres: Mapped[list[str] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
     genres_source: Mapped[str | None] = mapped_column(String(100), nullable=True)
     genres_fetched_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
