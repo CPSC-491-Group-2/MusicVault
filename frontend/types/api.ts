@@ -23,7 +23,8 @@ export type AuthErrorCode =
   | "spotify_in_use"
   | "already_connected"
   | "invalid_credentials"
-  | "email_taken";
+  | "email_taken"
+  | "service_unavailable";
 export interface RegisterRequest {
   email: string;
   password: string;
