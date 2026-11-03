@@ -1,5 +1,4 @@
 import { POPULARITY_ROW } from "@/data/popularity-row";
-import { SPOTIFY_LOGIN_URL } from "@/lib/auth";
 
 import { expect, test } from "../fixtures";
 import { visit } from "../support/routes";
@@ -16,13 +15,16 @@ test.describe("splash", { tag: "@smoke" }, () => {
     await expect(headline).toHaveText("Music you'd love, from artists you haven't heard yet.");
   });
 
-  test("both login links go to Spotify login", async ({ page }) => {
-    const links = page.getByRole("link", { name: "Log in with Spotify" });
-    await expect(links).toHaveCount(2);
+  test("the nav links to log in and the hero to sign up", async ({ page }) => {
+    const nav = page.getByRole("banner");
+    const hero = page.locator("section", { has: page.getByRole("heading", { level: 1 }) });
 
-    for (const link of await links.all()) {
-      await expect(link).toHaveAttribute("href", SPOTIFY_LOGIN_URL);
-    }
+    await expect(nav.getByRole("link", { name: "Log in", exact: true })).toHaveAttribute("href", "/login");
+    await expect(hero.getByRole("link", { name: "Create account", exact: true })).toHaveAttribute(
+      "href",
+      "/signup",
+    );
+    await expect(page.getByRole("link", { name: "Log in with Spotify" })).toHaveCount(0);
   });
 
   test("the popularity row shows nine album covers", async ({ page }) => {

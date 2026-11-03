@@ -1,5 +1,5 @@
 import Image from "next/image";
-import SpotifyLoginButton from "@/components/splash/SpotifyLoginButton";
+import { Button } from "@/components/ui/Button";
 
 export default function Hero() {
   return (
@@ -14,7 +14,9 @@ export default function Hero() {
             fit your taste, weighted toward smaller artists and tracks the
             charts skip.
           </p>
-          <SpotifyLoginButton size="lg" className="mt-10" />
+          <Button variant="primary" size="lg" href="/signup" className="mt-10">
+            Create account
+          </Button>
         </div>
         <div className="aspect-[4/5] w-full lg:aspect-auto lg:h-[680px] lg:w-[600px]">
           <Image
