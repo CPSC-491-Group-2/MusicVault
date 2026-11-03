@@ -1,14 +1,22 @@
 "use client";
 
-import { useId, useState, type ComponentPropsWithoutRef } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+} from "react";
 
 import { Button } from "./Button";
+import { WarningIcon } from "./icons";
 
 type TextFieldProps = {
   label: string;
   type?: "text" | "email" | "password";
   hint?: string;
   error?: string;
+  errorKey?: number | string;
   className?: string;
 } & Omit<ComponentPropsWithoutRef<"input">, "className" | "type">;
 
@@ -17,6 +25,7 @@ export function TextField({
   type = "text",
   hint,
   error,
+  errorKey,
   className,
   id,
   ...rest
@@ -27,6 +36,22 @@ export function TextField({
   const errorId = `${inputId}-error`;
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isPassword = type === "password";
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const errorSignature = `${errorKey ?? ""}|${error ?? ""}`;
+  const lastErrorSignature = useRef<string | null>(null);
+
+  useEffect(() => {
+    const previous = lastErrorSignature.current;
+    lastErrorSignature.current = errorSignature;
+    const field = fieldRef.current;
+    if (previous === null || previous === errorSignature || !error || !field) {
+      return;
+    }
+    // the forced reflow is what lets a repeated message shake again
+    field.classList.remove("mv-shake");
+    void field.offsetWidth;
+    field.classList.add("mv-shake");
+  }, [error, errorSignature]);
 
   const describedBy =
     [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") ||
@@ -37,8 +62,10 @@ export function TextField({
     .join(" ");
 
   const fieldClasses = [
-    "flex h-[68px] w-full items-center gap-3 rounded-[20px] bg-paper border-[1.5px] focus-within:border-2 focus-within:border-olive focus-within:outline-2 focus-within:outline-solid focus-within:outline-offset-2 focus-within:outline-olive",
-    error ? "border-olive" : "border-olive/14",
+    "flex h-[68px] w-full items-center gap-3 rounded-[20px] bg-paper border-[1.5px] outline-offset-0 focus-within:outline-2 focus-within:outline-solid focus-within:outline-offset-2 transition-[border-color,outline-offset] duration-[200ms,150ms] ease-mv",
+    error
+      ? "border-red focus-within:border-red focus-within:outline-red"
+      : "border-olive/14 hover:border-olive/25 focus-within:border-olive focus-within:outline-olive",
     isPassword ? "pl-5 pr-2" : "px-5",
   ].join(" ");
 
@@ -55,7 +82,15 @@ export function TextField({
           {hint}
         </p>
       ) : null}
-      <div className={fieldClasses}>
+      <div
+        ref={fieldRef}
+        className={fieldClasses}
+        onAnimationEnd={(event) => {
+          if (event.target === event.currentTarget) {
+            fieldRef.current?.classList.remove("mv-shake");
+          }
+        }}
+      >
         <input
           {...rest}
           id={inputId}
@@ -78,11 +113,26 @@ export function TextField({
           </Button>
         ) : null}
       </div>
-      {error ? (
-        <p id={errorId} className="text-[15px] leading-[1.45] text-olive">
-          {error}
-        </p>
-      ) : null}
+      <div
+        aria-live="polite"
+        className={[
+          // the negative margin cancels the column gap while the message is collapsed
+          "-mt-2 grid transition-[grid-template-rows,opacity] duration-200 ease-mv",
+          error ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        ].join(" ")}
+      >
+        <div className="overflow-hidden">
+          {error ? (
+            <p
+              id={errorId}
+              className="flex items-start gap-2 pt-2 text-[15px] font-medium leading-[1.45] text-red"
+            >
+              <WarningIcon className="mt-[2px] h-[18px] w-[18px] shrink-0" />
+              {error}
+            </p>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

@@ -38,8 +38,8 @@ export function SwipeIcon({ className, title }: IconProps) {
       aria-hidden={title ? undefined : "true"}
     >
       {title && <title>{title}</title>}
-      <rect x="3" y="2" width="15" height="17" rx="3" />
-      <rect x="6" y="5" width="15" height="17" rx="3" />
+      <rect data-part="arrow-out" x="3" y="2" width="15" height="17" rx="3" />
+      <rect data-part="arrow-in" x="6" y="5" width="15" height="17" rx="3" />
     </svg>
   );
 }
@@ -97,9 +97,9 @@ export function ChartIcon({ className, title }: IconProps) {
       aria-hidden={title ? undefined : "true"}
     >
       {title && <title>{title}</title>}
-      <path d="M4 21 V15" />
-      <path d="M12 21 V9" />
-      <path d="M20 21 V4" />
+      <path data-part="bar-1" d="M4 21 V15" />
+      <path data-part="bar-2" d="M12 21 V9" />
+      <path data-part="bar-3" d="M20 21 V4" />
     </svg>
   );
 }
@@ -118,7 +118,7 @@ export function UserIcon({ className, title }: IconProps) {
       aria-hidden={title ? undefined : "true"}
     >
       {title && <title>{title}</title>}
-      <circle cx="12" cy="8" r="4" />
+      <circle data-part="head" cx="12" cy="8" r="4" />
       <path d="M5 21 C5 16 8 14 12 14 C16 14 19 16 19 21" />
     </svg>
   );
@@ -127,6 +127,7 @@ export function UserIcon({ className, title }: IconProps) {
 export function PlusIcon({ className, title }: IconProps) {
   return (
     <svg
+      data-icon="plus"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -159,6 +160,27 @@ export function CheckIcon({ className, title }: IconProps) {
     >
       {title && <title>{title}</title>}
       <path d="M4 13 L9 18 L20 6" />
+    </svg>
+  );
+}
+
+export function WarningIcon({ className, title }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      role={title ? "img" : undefined}
+      aria-hidden={title ? undefined : "true"}
+    >
+      {title && <title>{title}</title>}
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5 V13" />
+      <path d="M12 16.5 V16.6" />
     </svg>
   );
 }
@@ -245,6 +267,7 @@ export function SkipIcon({ className, title }: IconProps) {
 export function DownloadIcon({ className, title }: IconProps) {
   return (
     <svg
+      data-icon="download"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
