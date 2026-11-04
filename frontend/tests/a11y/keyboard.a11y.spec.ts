@@ -105,6 +105,22 @@ test.describe("keyboard", { tag: "@a11y" }, () => {
     await expect(page.getByRole("heading", { level: 1, name: "Swipe to tune" })).toBeVisible();
   });
 
+  test("the sidebar edge handle takes focus and is big enough", async ({ page, isMobile }) => {
+    await visit(page, "/dashboard");
+
+    const handle = page.getByRole("button", { name: "Collapse sidebar" });
+
+    if (isMobile) {
+      await expect(handle).toHaveCount(0);
+
+      return;
+    }
+
+    await tabTo(page, handle);
+    await expectVisibleFocus(handle);
+    await expectMinTargetSize(handle, 44);
+  });
+
   for (const { path, chip, fixme } of CHIPS) {
     test(`a chip on ${path} toggles aria-pressed with a click, Space and Enter`, async ({
       page,

@@ -27,7 +27,7 @@ export function ProgressBar({ value, label, className }: ProgressBarProps) {
     >
       {/* Width is dynamic, so it can't be a static Tailwind class. */}
       <div
-        className="h-full rounded-full bg-green"
+        className="h-full rounded-full bg-green transition-[width] duration-[250ms] ease-mv"
         style={{ width: `${pct}%` }}
       />
     </div>

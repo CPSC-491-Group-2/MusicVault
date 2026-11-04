@@ -97,6 +97,13 @@ Useful helpers:
 - `visit(page, path)` from `support/routes.ts` opens a page and waits until its h1 is on screen and the fonts have loaded.
 - `support/focus.ts` has `tabTo(page, locator)`, `tabThrough(page)`, `expectVisibleFocus(locator)` and `expectMinTargetSize(locator, 44)`.
 
+## Shell and form states
+
+Two behaviors have specs of their own, since a line in `ROUTES` doesn't cover them:
+
+- Sidebar behavior is in [`app/sidebar.spec.ts`](app/sidebar.spec.ts): the edge handle collapsing the rail to 76px, the `mv-sidebar` cookie keeping it collapsed across a reload, the `[` shortcut and its silence while you type in a field, and the collapsed rail keeping every nav link's accessible name while the account details drop out of the tab order. The rail is desktop only, so the group skips itself at 390px.
+- Field error accessibility is in [`a11y/field-errors.a11y.spec.ts`](a11y/field-errors.a11y.spec.ts): the submitted TextField on `/ui` reads as invalid, points at a message with an icon, draws the border and the message text in the red token, passes an axe scan in that state, and shakes once per submit.
+
 ## Mocking the API
 
 The backend isn't running during tests. Every request to `/api/...` gets a `503` with `{ "error": "not mocked in tests" }` unless the test answers it. Use the `mockApi` fixture, with a response type from [`types/api.ts`](../types/api.ts):

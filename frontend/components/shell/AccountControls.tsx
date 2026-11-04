@@ -25,7 +25,14 @@ type SidebarAccountProps = {
 export function SidebarAccount({ user, className }: SidebarAccountProps) {
   const logOut = useLogOut();
 
-  return <AccountChip user={user} onLogOut={logOut} className={className} />;
+  return (
+    <AccountChip
+      user={user}
+      onLogOut={logOut}
+      className={className}
+      collapsesWithSidebar
+    />
+  );
 }
 
 export function MobileLogOut() {

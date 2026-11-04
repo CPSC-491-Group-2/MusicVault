@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -6,6 +7,7 @@ import type { User } from "@/types/api";
 
 import { MobileLogOut } from "./AccountControls";
 import { MobileTabBar } from "./MobileTabBar";
+import { ShellFrame } from "./ShellFrame";
 import { Sidebar } from "./Sidebar";
 
 type AppShellProps = {
@@ -13,10 +15,11 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-export function AppShell({ user, children }: AppShellProps) {
+export async function AppShell({ user, children }: AppShellProps) {
+  const collapsed = (await cookies()).get("mv-sidebar")?.value === "collapsed";
+
   return (
-    <div className="min-h-dvh bg-canvas min-[860px]:grid min-[860px]:grid-cols-[260px_1fr]">
-      <Sidebar user={user} />
+    <ShellFrame initialCollapsed={collapsed} sidebar={<Sidebar user={user} />}>
       <main className="px-[clamp(16px,4vw,56px)] pt-10 pb-[120px] min-[860px]:pb-24">
         <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-7">
           <div className="flex items-center justify-between gap-3 min-[860px]:hidden">
@@ -32,6 +35,6 @@ export function AppShell({ user, children }: AppShellProps) {
         </div>
       </main>
       <MobileTabBar />
-    </div>
+    </ShellFrame>
   );
 }

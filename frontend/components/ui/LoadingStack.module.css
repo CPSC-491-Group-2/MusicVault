@@ -1,0 +1,137 @@
+@property --ls-d {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --ls-e {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --ls-bob {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@keyframes ls-fold {
+  0%,
+  10% {
+    --ls-d: 0;
+  }
+  38%,
+  62% {
+    --ls-d: 1;
+  }
+  90%,
+  100% {
+    --ls-d: 0;
+  }
+}
+
+@keyframes ls-breathe {
+  from {
+    --ls-e: 0.5;
+  }
+  to {
+    --ls-e: 2;
+  }
+}
+
+@keyframes ls-lift {
+  from {
+    --ls-bob: 0;
+  }
+  to {
+    --ls-bob: 0.9;
+  }
+}
+
+.root {
+  --ls-gap: calc(var(--ls-size) * 0.09);
+  position: relative;
+  width: calc(var(--ls-size) * 1.7);
+  height: calc(var(--ls-size) * 1.5);
+  perspective: calc(var(--ls-size) * 6);
+}
+
+.stack {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--ls-d) * 58deg)) rotateZ(calc(var(--ls-d) * -34deg));
+  animation:
+    ls-fold 7s ease-in-out infinite,
+    ls-breathe 3.4s ease-in-out infinite alternate;
+}
+
+.layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--ls-size);
+  height: auto;
+  transform: translate(-50%, -50%)
+    translateZ(calc(var(--i) * (var(--ls-e) + var(--ls-bob)) * var(--ls-gap) * var(--ls-d)));
+  animation: ls-lift 1s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.22s);
+}
+
+.green {
+  fill: var(--color-green);
+}
+
+.orchid {
+  fill: var(--color-orchid);
+}
+
+.greenTint {
+  fill: var(--color-green);
+  fill-opacity: 0.55;
+}
+
+.orchidTint {
+  fill: var(--color-orchid);
+  fill-opacity: 0.55;
+}
+
+.mono {
+  fill: currentColor;
+  fill-opacity: calc(1 - var(--ls-depth) * 0.18);
+}
+
+.still {
+  --ls-d: 1;
+  --ls-e: 1.2;
+}
+
+.still.flat {
+  --ls-d: 0;
+}
+
+.still .stack {
+  animation: none;
+}
+
+.still .layer {
+  --ls-bob: 0.3;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    --ls-d: 1;
+    --ls-e: 1.2;
+  }
+
+  .stack {
+    animation: none;
+  }
+
+  .layer {
+    --ls-bob: 0.3;
+    animation: none;
+  }
+}

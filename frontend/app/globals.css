@@ -7,9 +7,83 @@
   --color-green: #397E20;
   --color-canvas: #FCE9EC;
   --color-paper: #FFF9F9;
+  --color-red: #B3261E;
   --font-sans: var(--font-bricolage);
+  --ease-mv: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { background: var(--color-blush); color: var(--color-olive); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    animation: none !important;
+  }
+}
+
+@keyframes mv-shake {
+  0% { transform: translateX(0); }
+  18% { transform: translateX(-6px); }
+  38% { transform: translateX(6px); }
+  58% { transform: translateX(-4px); }
+  78% { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+/* Added only when an error appears after mount, never on page load. */
+.mv-shake { animation: mv-shake 250ms var(--ease-mv); }
+
+@keyframes mv-trace {
+  0% { stroke-dasharray: 0 100; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 100 0; }
+  100% { stroke-dasharray: 0 100; stroke-dashoffset: -100; }
+}
+
+/* Icon motion: nav links carry data-icon, icon svgs expose data-part. */
+a[data-icon] svg,
+a[data-icon] svg [data-part],
+[data-icon="plus"],
+[data-icon="download"] {
+  transition: transform 200ms var(--ease-mv);
+}
+a[data-icon]:active svg,
+a[data-icon]:active svg [data-part] {
+  transition-duration: 150ms;
+}
+svg [data-part] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+a[data-icon="home"]:hover svg,
+a[data-icon="home"]:focus-visible svg { transform: translateY(-2px); }
+
+a[data-icon="swipe"]:hover [data-part="arrow-out"],
+a[data-icon="swipe"]:focus-visible [data-part="arrow-out"] { transform: translateX(2.5px); }
+a[data-icon="swipe"]:hover [data-part="arrow-in"],
+a[data-icon="swipe"]:focus-visible [data-part="arrow-in"] { transform: translateX(-2.5px); }
+
+a[data-icon="vault"]:hover svg,
+a[data-icon="vault"]:focus-visible svg { transform: scale(1.14); }
+
+a[data-icon="search"]:hover svg,
+a[data-icon="search"]:focus-visible svg { transform: rotate(-12deg) scale(1.06); }
+
+a[data-icon="taste"] [data-part] { transform-origin: 50% 100%; }
+a[data-icon="taste"]:hover [data-part="bar-1"],
+a[data-icon="taste"]:focus-visible [data-part="bar-1"] { transform: scaleY(1.3); }
+a[data-icon="taste"]:hover [data-part="bar-2"],
+a[data-icon="taste"]:focus-visible [data-part="bar-2"] { transform: scaleY(0.7); }
+a[data-icon="taste"]:hover [data-part="bar-3"],
+a[data-icon="taste"]:focus-visible [data-part="bar-3"] { transform: scaleY(1.45); }
+
+a[data-icon="profile"]:hover [data-part="head"],
+a[data-icon="profile"]:focus-visible [data-part="head"] { transform: translateY(-1.5px); }
+
+button:hover:not(:disabled) [data-icon="plus"],
+a:hover [data-icon="plus"] { transform: rotate(90deg); }
+button:hover:not(:disabled) [data-icon="download"],
+a:hover [data-icon="download"] { transform: translateY(2px); }
