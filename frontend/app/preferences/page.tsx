@@ -90,15 +90,17 @@ export default function PreferencesPage() {
   }
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="mx-auto max-w-4xl">
-        <h1 className="mb-2 text-3xl font-bold">
-          Preferred Songs
+    <main className="min-h-screen bg-canvas text-olive">
+      <div className="mx-auto flex max-w-[1120px] flex-col gap-7 px-4 py-8 sm:px-7 lg:px-14">
+      <header className="flex flex-col gap-3">
+        <h1 className="text-[32px] font-semibold leading-[1.05] tracking-[-0.03em] text-balance sm:text-[44px]">
+          Pick songs you love
         </h1>
 
-        <p className="mb-8 text-gray-600">
-          Select songs you like or add a song manually.
+        <p className="max-w-[65ch] text-[17px] leading-6 text-olive/70">
+          Choose from your Spotify favorites or add a song yourself. We’ll use them to shape your vault.
         </p>
+      </header>
 
         <section className="mb-10">
           <h2 className="mb-4 text-2xl font-semibold">
@@ -114,23 +116,22 @@ export default function PreferencesPage() {
               return (
                 <div
                   key={song.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
+                  className="flex min-h-20 items-center justify-between gap-4 rounded-[20px] border border-olive/14 bg-paper px-5 py-4"                >
                   <div>
-                    <p className="font-semibold">{song.title}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-[17px] font-semibold leading-6 text-olive">{song.title}</p>
+                    <p className="text-[15px] leading-5 text-olive/70">
                       {song.artist}
                     </p>
                   </div>
 
-                  <button
+                  <Button
                     type="button"
+                    variant={isPreferred ? "secondary" : "primary"}
                     disabled={isPreferred}
                     onClick={() => addSong(song)}
-                    className="rounded border px-4 py-2 disabled:opacity-50"
-                  >
-                    {isPreferred ? "Added" : "Add"}
-                  </button>
+                    >
+                    {isPreferred ? "Saved" : "Save to vault"}
+                  </Button>
                 </div>
               );
             })}
@@ -143,9 +144,15 @@ export default function PreferencesPage() {
           </h2>
 
           {preferredSongs.length === 0 ? (
-            <p className="text-gray-600">
-              No preferred songs selected yet.
-            </p>
+            <div className="rounded-[28px] bg-paper p-7">
+              <p className="text-[18px] font-medium text-olive">
+                Your vault is empty
+              </p>
+
+              <p className="mt-2 max-w-[55ch] text-[16px] leading-6 text-olive/70">
+                Pick a few songs you love and they’ll show up here.
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               {preferredSongs.map((song) => (
