@@ -29,6 +29,19 @@ from db.queries.user import create_user  # noqa: E402
 from db.session import SessionLocal, engine  # noqa: E402
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "recommendation: recommendation scoring and ranking tests, run as their "
+        "own CI job",
+    )
+    config.addinivalue_line(
+        "markers",
+        "data_classification: SOC 2 data classification checks (C-1), "
+        "run as their own CI job",
+    )
+
+
 @pytest.fixture
 def client():
     app = create_app()

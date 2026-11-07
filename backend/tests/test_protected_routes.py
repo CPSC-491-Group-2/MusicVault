@@ -101,8 +101,15 @@ def test_me_returns_logged_in_user(auth_client, log_in, db_user):
     body = response.get_json()
     assert body["id"] == str(db_user)
     assert body["display_name"] == "Protected Test"
-    assert set(body) == {"id", "email", "display_name", "created_at", "updated_at"}
-
+    assert set(body) == {
+        "id",
+        "email",
+        "display_name",
+        "created_at",
+        "updated_at",
+        "has_password",
+        "spotify",
+    }
 
 def test_me_only_returns_the_session_user(auth_client, log_in, db_user):
     # There is no way to ask /me for someone else; the session decides.

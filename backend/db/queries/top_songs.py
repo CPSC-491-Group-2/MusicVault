@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, joinedload
 
+from models.artist import Artist, SongArtist
 from models.song import Song
 from models.user_top_song import TIME_RANGES, UserTopSong
 
@@ -18,7 +19,9 @@ def save_top_songs(
     spotify-api-backend/NORMALIZATION.md), best first; rank is the position
     in the list, starting at 1. Songs are matched on their Spotify track ID,
     so a song in many users' lists is stored once, and its details are
-    overwritten with the latest values, including missing ones.
+    overwritten with the latest values, including missing ones. Each song's
+    artists are stored as shared Artist rows, matched on Spotify artist ID,
+    and its credits are replaced with the track's current artist list.
 
     An empty list clears the user's songs for that range. A repeated track
     keeps its first (highest) rank. Invalid input raises ValueError before
@@ -95,23 +98,70 @@ def _unique_tracks(tracks: list[dict]) -> list[dict]:
 
 
 def _upsert_song(db: Session, track: dict) -> Song:
+    # Artists are resolved first, because _upsert_artists flushes the session
+    # and a new song must not be flushed before its required fields are set.
+    artists = track.get("artists") or []
+    credited = _upsert_artists(db, artists)
+
     song = db.scalar(select(Song).where(Song.spotify_track_id == track["spotify_id"]))
     if song is None:
         song = Song(spotify_track_id=track["spotify_id"])
         db.add(song)
 
     album = track.get("album") or {}
-    artists = track.get("artists") or []
     popularity = track.get("popularity")
 
     song.title = track["title"]
-    # songs has one artist column; multiple artists are kept in order.
+    # artist_name is the display string; artist_credits holds the artists.
     song.artist_name = ", ".join(a["name"] for a in artists if a.get("name"))
     song.album_name = album.get("name")
     song.album_image_url = album.get("image_url")
+    song.isrc = track.get("isrc")
     song.duration_ms = track.get("duration_ms")
     song.explicit = track.get("explicit")
     song.popularity = popularity
     song.popularity_source = "spotify" if popularity is not None else None
     song.spotify_url = track.get("spotify_url")
+    _set_artist_credits(db, song, credited)
     return song
+
+
+def _upsert_artists(db: Session, artists: list[dict]) -> list[Artist]:
+    """The track's artists as Artist rows, in credit order.
+
+    Artists are matched on their Spotify artist ID and their name is updated
+    to the latest value. Genres are left alone; they come from a separate
+    lookup. Artists without an ID or name, and repeats, are skipped.
+    """
+    credited, seen = [], set()
+    for entry in artists:
+        spotify_artist_id, name = entry.get("spotify_id"), entry.get("name")
+        if not spotify_artist_id or not name or spotify_artist_id in seen:
+            continue
+        seen.add(spotify_artist_id)
+
+        artist = db.scalar(
+            select(Artist).where(Artist.spotify_artist_id == spotify_artist_id)
+        )
+        if artist is None:
+            artist = Artist(spotify_artist_id=spotify_artist_id, name=name)
+            db.add(artist)
+            # SessionLocal doesn't autoflush, so without this a later track in
+            # the same save wouldn't find the artist and would add it again.
+            db.flush()
+        artist.name = name
+        credited.append(artist)
+    return credited
+
+
+def _set_artist_credits(db: Session, song: Song, artists: list[Artist]) -> None:
+    if [credit.artist for credit in song.artist_credits] == artists:
+        return
+    # Old credits are deleted before the new ones are inserted, so a
+    # reordered list can't collide on (song_id, position) or the primary key.
+    song.artist_credits.clear()
+    db.flush()
+    song.artist_credits.extend(
+        SongArtist(artist=artist, position=position)
+        for position, artist in enumerate(artists, start=1)
+    )

@@ -1,0 +1,54 @@
+
+name: Dependency Vulnerability Audit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    name: Backend Dependency Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pip-audit
+          python -m pip_audit --version
+
+      - name: Create report directory
+        run: |
+          mkdir -p docs/security/pip-audit/reports
+
+      - name: Scan backend dependencies
+        run: |
+          python -m pip_audit \
+            -r backend/requirements.txt \
+            --format json \
+            --output docs/security/pip-audit/reports/vm01-backend.json
+
+      - name: Upload vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm01-backend-report
+          path: docs/security/pip-audit/reports/vm01-backend.json
+          if-no-files-found: warn
+          retention-days: 30

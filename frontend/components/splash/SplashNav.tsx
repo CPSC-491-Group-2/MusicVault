@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Wordmark from "@/components/brand/Wordmark";
-import SpotifyLoginButton from "@/components/splash/SpotifyLoginButton";
+import { Button } from "@/components/ui/Button";
 
 export default function SplashNav() {
   return (
@@ -24,7 +24,9 @@ export default function SplashNav() {
         >
           About
         </a>
-        <SpotifyLoginButton size="sm" />
+        <Button variant="primary" size="sm" href="/login">
+          Log in
+        </Button>
       </div>
     </header>
   );

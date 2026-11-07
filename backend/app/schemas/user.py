@@ -26,3 +26,28 @@ class UserResponseSchema(Schema):
         required=True,
         metadata={"description": "Last update timestamp"},
     )
+
+
+class SpotifyConnectionSchema(Schema):
+    """Describe a user's Spotify connection."""
+
+    connected = fields.Boolean(required=True)
+
+    display_name = fields.String(
+        allow_none=True,
+        metadata={"description": "Connected Spotify display name"},
+    )
+
+
+class CurrentUserResponseSchema(UserResponseSchema):
+    """Current user information and authentication methods."""
+
+    has_password = fields.Boolean(
+        required=True,
+        metadata={"description": "Whether local password credentials exist"},
+    )
+
+    spotify = fields.Nested(
+        SpotifyConnectionSchema,
+        required=True,
+    )

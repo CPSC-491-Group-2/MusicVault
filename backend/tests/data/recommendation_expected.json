@@ -1,0 +1,1077 @@
+{
+  "algorithm_version": "similarity-v2",
+  "profiles": {
+    "indie_listener": [
+      {
+        "song": "indie-4",
+        "score": 0.557805,
+        "reason": "audio",
+        "components": {
+          "artist": 0.350554,
+          "genre": 0.542128,
+          "audio": 0.817889
+        }
+      },
+      {
+        "song": "indie-5",
+        "score": 0.330175,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.350554,
+          "audio": 0.691605
+        }
+      },
+      {
+        "song": "indie-6",
+        "score": 0.24797,
+        "reason": "genre",
+        "components": {
+          "artist": 0.298893,
+          "genre": 0.409594,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "electronic-2",
+        "score": 0.207925,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.693082
+        }
+      },
+      {
+        "song": "hiphop-5",
+        "score": 0.204738,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.68246
+        }
+      },
+      {
+        "song": "hiphop-2",
+        "score": 0.189773,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.632576
+        }
+      },
+      {
+        "song": "electronic-3",
+        "score": 0.180021,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.600069
+        }
+      },
+      {
+        "song": "hiphop-1",
+        "score": 0.174559,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.581865
+        }
+      },
+      {
+        "song": "jazz-1",
+        "score": 0.165498,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.551661
+        }
+      },
+      {
+        "song": "hiphop-4",
+        "score": 0.162933,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.543109
+        }
+      },
+      {
+        "song": "hiphop-3",
+        "score": 0.157646,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.525486
+        }
+      },
+      {
+        "song": "electronic-1",
+        "score": 0.153538,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.511793
+        }
+      },
+      {
+        "song": "messy-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unknown-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "no-artists-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unknown-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unfiled-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      }
+    ],
+    "hiphop_listener": [
+      {
+        "song": "hiphop-4",
+        "score": 0.553051,
+        "reason": "audio",
+        "components": {
+          "artist": 0.333948,
+          "genre": 0.52829,
+          "audio": 0.83756
+        }
+      },
+      {
+        "song": "hiphop-5",
+        "score": 0.366886,
+        "reason": "audio",
+        "components": {
+          "artist": 0.166052,
+          "genre": 0.313653,
+          "audio": 0.663296
+        }
+      },
+      {
+        "song": "electronic-2",
+        "score": 0.234058,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.780192
+        }
+      },
+      {
+        "song": "electronic-3",
+        "score": 0.224604,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.748679
+        }
+      },
+      {
+        "song": "electronic-1",
+        "score": 0.198586,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.661953
+        }
+      },
+      {
+        "song": "indie-2",
+        "score": 0.18679,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.622632
+        }
+      },
+      {
+        "song": "indie-3",
+        "score": 0.184347,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.61449
+        }
+      },
+      {
+        "song": "indie-4",
+        "score": 0.167603,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.558677
+        }
+      },
+      {
+        "song": "jazz-1",
+        "score": 0.15679,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.110701,
+          "audio": 0.393481
+        }
+      },
+      {
+        "song": "indie-1",
+        "score": 0.155616,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.518721
+        }
+      },
+      {
+        "song": "indie-5",
+        "score": 0.13417,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.447232
+        }
+      },
+      {
+        "song": "messy-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unknown-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "no-artists-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unknown-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unfiled-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "indie-6",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      }
+    ],
+    "mixed_listener": [
+      {
+        "song": "indie-1",
+        "score": 0.371614,
+        "reason": "audio",
+        "components": {
+          "artist": 0.184502,
+          "genre": 0.246002,
+          "audio": 0.736458
+        }
+      },
+      {
+        "song": "indie-2",
+        "score": 0.369311,
+        "reason": "audio",
+        "components": {
+          "artist": 0.184502,
+          "genre": 0.246002,
+          "audio": 0.728782
+        }
+      },
+      {
+        "song": "electronic-3",
+        "score": 0.343305,
+        "reason": "audio",
+        "components": {
+          "artist": 0.166052,
+          "genre": 0.221402,
+          "audio": 0.69232
+        }
+      },
+      {
+        "song": "hiphop-2",
+        "score": 0.320898,
+        "reason": "audio",
+        "components": {
+          "artist": 0.149446,
+          "genre": 0.199262,
+          "audio": 0.662834
+        }
+      },
+      {
+        "song": "jazz-1",
+        "score": 0.263856,
+        "reason": "audio",
+        "components": {
+          "artist": 0.149446,
+          "genre": 0.199262,
+          "audio": 0.472694
+        }
+      },
+      {
+        "song": "electronic-2",
+        "score": 0.24977,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.110701,
+          "audio": 0.703415
+        }
+      },
+      {
+        "song": "indie-5",
+        "score": 0.244637,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.123001,
+          "audio": 0.671956
+        }
+      },
+      {
+        "song": "hiphop-1",
+        "score": 0.224137,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.074723,
+          "audio": 0.659946
+        }
+      },
+      {
+        "song": "hiphop-4",
+        "score": 0.204889,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.059779,
+          "audio": 0.61322
+        }
+      },
+      {
+        "song": "indie-3",
+        "score": 0.194856,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.092251,
+          "audio": 0.541894
+        }
+      },
+      {
+        "song": "hiphop-3",
+        "score": 0.161188,
+        "reason": "audio",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.537294
+        }
+      },
+      {
+        "song": "indie-6",
+        "score": 0.032288,
+        "reason": "genre",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.092251,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "messy-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unknown-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "no-artists-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unknown-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      },
+      {
+        "song": "unfiled-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": 0.0
+        }
+      }
+    ],
+    "sparse_listener": [
+      {
+        "song": "indie-3",
+        "score": 0.736842,
+        "reason": "genre",
+        "components": {
+          "artist": 0.473684,
+          "genre": 1.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "unknown-2",
+        "score": 0.263158,
+        "reason": "artist",
+        "components": {
+          "artist": 0.526316,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-2",
+        "score": 0.166667,
+        "reason": "genre",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.333333,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-4",
+        "score": 0.125,
+        "reason": "genre",
+        "components": {
+          "artist": 0.0,
+          "genre": 0.25,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-4",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-3",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "messy-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-5",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-5",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "no-artists-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "unfiled-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "jazz-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-3",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": 0.0,
+          "audio": null
+        }
+      }
+    ],
+    "messy_listener": [
+      {
+        "song": "hiphop-4",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-3",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-3",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-5",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-5",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-4",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "unknown-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "unknown-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "jazz-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-6",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-3",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": 0.0,
+          "genre": null,
+          "audio": null
+        }
+      }
+    ],
+    "empty_listener": [
+      {
+        "song": "hiphop-4",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-3",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-3",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "messy-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-5",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-5",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-4",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "unknown-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "no-artists-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "unknown-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "unfiled-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "jazz-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-6",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "indie-1",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "hiphop-3",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      },
+      {
+        "song": "electronic-2",
+        "score": 0.0,
+        "reason": null,
+        "components": {
+          "artist": null,
+          "genre": null,
+          "audio": null
+        }
+      }
+    ]
+  }
+}

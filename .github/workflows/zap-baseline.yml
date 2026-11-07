@@ -1,0 +1,117 @@
+
+name: Dynamic Security Testing
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "37 10 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zap-baseline:
+    name: OWASP ZAP Baseline Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Start temporary frontend server
+        working-directory: frontend
+        run: |
+          nohup npx next dev --hostname 127.0.0.1 --port 3100 \
+            > "$RUNNER_TEMP/vm03-next.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/vm03-next.pid"
+
+      - name: Verify frontend readiness
+        run: |
+          for i in $(seq 1 60); do
+            if curl --fail --silent --max-time 5 \
+              http://127.0.0.1:3100/ > /dev/null; then
+              echo "MusicVault frontend is ready."
+              exit 0
+            fi
+            sleep 3
+          done
+
+          cat "$RUNNER_TEMP/vm03-next.log"
+          echo "Frontend failed to start."
+          exit 1
+
+      - name: Prepare ZAP report directory
+        run: |
+          mkdir -p docs/security/zap/reports
+          sudo chown 1000:1000 docs/security/zap/reports
+
+      - name: Run OWASP ZAP baseline scan
+        run: |
+          set +e
+          docker run --rm --network host \
+            -v "$GITHUB_WORKSPACE/docs/security/zap/reports:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://127.0.0.1:3100 \
+            -m 1 \
+            -r vm03-ci.html \
+            -J vm03-ci.json
+
+          result=$?
+          set -e
+
+          echo "ZAP exit code: $result"
+
+          case "$result" in
+            0)
+              echo "Baseline completed without warnings."
+              ;;
+            2)
+              echo "::warning::ZAP findings detected. Review reports."
+              ;;
+            1)
+              echo "::error::ZAP reported a FAIL-level finding."
+              exit 1
+              ;;
+            *)
+              echo "::error::ZAP execution failed."
+              exit 1
+              ;;
+          esac
+
+          test -s docs/security/zap/reports/vm03-ci.json
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm03-zap-reports
+          path: |
+            docs/security/zap/reports/vm03-ci.html
+            docs/security/zap/reports/vm03-ci.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload frontend startup log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm03-frontend-log
+          path: ${{ runner.temp }}/vm03-next.log
+          if-no-files-found: ignore

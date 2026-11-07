@@ -24,6 +24,8 @@ SCHEMA_TABLES = {
     "charts",
     "chart_entries",
     "user_top_songs",
+    "artists",
+    "song_artists",
 }
 
 

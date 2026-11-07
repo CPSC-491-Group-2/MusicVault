@@ -20,6 +20,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Design
+
+Colors, type, spacing, shape and the shared components in `components/ui/` are fixed by the [design spec](../docs/design-spec.md). Read it before building a screen, and preview every shared component at `/ui`.
+
+## Testing
+
+End-to-end and accessibility tests use Playwright and live in `tests/`. Run them with `npm run test:e2e`. The [testing guide](tests/README.md) covers running them, adding a page, writing a feature test, mocking the API and checking accessibility.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

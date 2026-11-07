@@ -1,17 +1,12 @@
-import Navbar from "../../components/Navbar";
+import { AppShell } from "@/components/shell/AppShell";
+import { requireUser } from "@/lib/session";
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <>
-      <Navbar />
+  const user = await requireUser();
 
-      <main>
-        {children}
-      </main>
-    </>
-  );
+  return <AppShell user={user}>{children}</AppShell>;
 }
