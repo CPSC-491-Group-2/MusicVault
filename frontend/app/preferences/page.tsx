@@ -104,7 +104,7 @@ export default function PreferencesPage() {
 
         <section className="mb-10">
           <h2 className="mb-4 text-2xl font-semibold">
-            Your Top Songs
+            Your top songs
           </h2>
 
           <div className="space-y-3">
@@ -140,7 +140,7 @@ export default function PreferencesPage() {
 
         <section>
           <h2 className="mb-4 text-2xl font-semibold">
-            Your Preferred Songs
+            Songs in your vault
           </h2>
 
           {preferredSongs.length === 0 ? (
@@ -182,14 +182,14 @@ export default function PreferencesPage() {
 
         <section className="mt-10">
           <h2 className="mb-4 text-2xl font-semibold">
-            Add a Song Manually
+            Add a song yourself 
           </h2>
 
-          <div className="space-y-4 rounded-lg border p-4">
+          <div className="flex flex-col gap-5 rounded-[28px] bg-paper p-7">
             <div>
               <label
                 htmlFor="song-title"
-                className="mb-1 block font-medium"
+                className="text-[16px] font-medium text-olive"
               >
                 Song Title
               </label>
@@ -199,12 +199,25 @@ export default function PreferencesPage() {
                 type="text"
                 value={songTitle}
                 onChange={(event) => {
-                  setSongTitle(event.target.value);
-                  setFormError("");
-                  setFormSuccess("");
-                }}
-                className="w-full rounded border px-3 py-2"
-                placeholder="Enter song title"
+                setSongTitle(event.target.value);
+                setFormError("");
+                setFormSuccess("");
+              }}
+                placeholder="Enter a song title"
+                className="
+                min-h-12 w-full
+                rounded-[18px]
+                border border-olive/14
+                bg-paper
+                px-4 py-3
+                text-[16px] text-olive
+                placeholder:text-olive/45
+                outline-none
+                focus:border-olive
+                focus:ring-2
+                focus:ring-olive
+                focus:ring-offset-2
+                "
               />
             </div>
 
@@ -225,19 +238,32 @@ export default function PreferencesPage() {
                   setFormError("");
                   setFormSuccess("");
                 }}
-                className="w-full rounded border px-3 py-2"
+                className="
+                  min-h-12 w-full
+                  rounded-[18px]
+                  border border-olive/14
+                  bg-paper
+                  px-4 py-3
+                  text-[16px] text-olive
+                  placeholder:text-olive/45
+                  outline-none
+                  focus:border-olive
+                  focus:ring-2
+                  focus:ring-olive
+                  focus:ring-offset-2
+                "
                 placeholder="Enter artist name"
               />
             </div>
 
             {formError && (
-              <p className="text-sm text-red-600">
+              <p className="text-[15px] text-red">
                 {formError}
               </p>
             )}
 
             {formSuccess && (
-              <p className="text-sm text-green-600">
+              <p className="text-[15px] font-medium text-green">
                 {formSuccess}
               </p>
             )}
