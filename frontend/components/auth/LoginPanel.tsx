@@ -40,6 +40,7 @@ export function LoginPanel({
   className,
 }: LoginPanelProps) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitCount, setSubmitCount] = useState(0);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +55,10 @@ export function LoginPanel({
     if (!email) nextErrors.email = "Enter your email";
     if (!password) nextErrors.password = "Enter your password";
 
-    flushSync(() => setFieldErrors(nextErrors));
+    flushSync(() => {
+      setFieldErrors(nextErrors);
+      setSubmitCount((count) => count + 1);
+    });
 
     if (nextErrors.email || nextErrors.password) {
       form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
@@ -86,6 +90,7 @@ export function LoginPanel({
           required
           disabled={pending}
           error={fieldErrors.email ?? serverFieldErrors?.email}
+          errorKey={submitCount}
         />
         <TextField
           label="Password"
@@ -95,16 +100,17 @@ export function LoginPanel({
           required
           disabled={pending}
           error={fieldErrors.password ?? serverFieldErrors?.password}
+          errorKey={submitCount}
         />
         <Button
           type="submit"
           variant="primary"
           size="lg"
-          disabled={pending}
-          aria-busy={pending || undefined}
+          loading={pending}
+          loadingLabel="Logging in"
           className="w-full"
         >
-          {pending ? "Logging in" : "Log in"}
+          Log in
         </Button>
       </form>
 

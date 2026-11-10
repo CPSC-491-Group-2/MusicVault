@@ -9,6 +9,7 @@ type LoadingStackProps = {
   still?: boolean;
   flat?: boolean;
   mono?: boolean;
+  inline?: boolean;
   className?: string;
 };
 
@@ -26,6 +27,7 @@ export function LoadingStack({
   still = false,
   flat = false,
   mono = false,
+  inline = false,
   className,
 }: LoadingStackProps) {
   const count = Math.min(6, Math.max(3, Math.round(layers)));
@@ -35,6 +37,7 @@ export function LoadingStack({
     styles.root,
     still && styles.still,
     still && flat && styles.flat,
+    inline && styles.inline,
     className,
   ]
     .filter(Boolean)
