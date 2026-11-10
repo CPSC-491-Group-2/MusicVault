@@ -116,9 +116,10 @@ def spotify_callback():
     with SessionLocal() as db:
         user = link_spotify_account(db, profile=profile, token=token)
         user_id = user.id
+        auth_version = user.auth_version
 
     # Establish a fresh MusicVault session.
-    login_user(user_id)
+    login_user(user_id, auth_version)
 
     return _redirect_to_frontend()
 

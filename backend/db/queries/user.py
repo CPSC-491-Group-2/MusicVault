@@ -71,6 +71,25 @@ def update_user(
     return user
 
 
+def set_password(
+    db: Session,
+    user_id: uuid.UUID,
+    password_hash: str,
+    email: str | None = None,
+) -> User | None:
+    user = db.get(User, user_id)
+    if user is None:
+        return None
+    user.password_hash = password_hash
+    if email is not None:
+        user.email = normalize_email(email)
+    # Sessions issued before this change now fail login_required.
+    user.auth_version = User.auth_version + 1
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def delete_user(db: Session, user_id: uuid.UUID) -> bool:
     user = db.get(User, user_id)
     if user is None:

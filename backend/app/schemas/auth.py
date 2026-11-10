@@ -31,3 +31,14 @@ class LoginRequestSchema(Schema):
         required=True,
         load_only=True,
     )
+
+
+class PasswordChangeSchema(Schema):
+    # Required only when the user already has a password; the route checks.
+    current_password = fields.String(load_only=True, load_default=None)
+    email = fields.Email(load_default=None, validate=validate.Length(max=320))
+    new_password = fields.String(
+        required=True,
+        load_only=True,
+        validate=validate.Length(min=8, max=128),
+    )
