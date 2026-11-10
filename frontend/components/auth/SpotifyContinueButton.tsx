@@ -52,7 +52,7 @@ export function SpotifyContinueButton({
     >
       {pending ? (
         <>
-          <LoadingStack size={22} mono label="" />
+          <LoadingStack size={22} mono inline label="" />
           <span>Opening Spotify</span>
         </>
       ) : (
