@@ -36,9 +36,14 @@ class LoginRequestSchema(Schema):
 class PasswordChangeSchema(Schema):
     # Required only when the user already has a password; the route checks.
     current_password = fields.String(load_only=True, load_default=None)
-    email = fields.Email(load_default=None, validate=validate.Length(max=320))
+    # Checked against EmailSchema only when the account still needs an email.
+    email = fields.String(load_default=None)
     new_password = fields.String(
         required=True,
         load_only=True,
         validate=validate.Length(min=8, max=128),
     )
+
+
+class EmailSchema(Schema):
+    email = fields.Email(required=True, validate=validate.Length(max=320))

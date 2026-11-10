@@ -49,6 +49,12 @@ def unauthorized():
     )
 
 
+def session_revoked():
+    return error_response(
+        401, "session_revoked", "Your session has ended. Please log in again."
+    )
+
+
 def forbidden():
     """For a logged-in user asking for something that isn't theirs."""
     return _json_response(
@@ -97,11 +103,7 @@ def login_required(view):
         user, code = get_session_user()
         if user is None:
             if code == "session_revoked":
-                return error_response(
-                    401,
-                    "session_revoked",
-                    "Your session has ended. Please log in again.",
-                )
+                return session_revoked()
             return unauthorized()
 
         g.current_user = user

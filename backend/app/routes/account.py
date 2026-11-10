@@ -8,10 +8,11 @@ from app.auth import (
     login_required,
     login_user,
     logout_user,
-    unauthorized,
+    session_revoked,
 )
 from app.routes.user import current_user_payload
 from app.schemas.auth import (
+    EmailSchema,
     LoginRequestSchema,
     PasswordChangeSchema,
     RegisterRequestSchema,
@@ -24,7 +25,13 @@ from app.security.passwords import (
     verify_password,
 )
 from db.queries.spotify_account import unlink_spotify
-from db.queries.user import create_user, get_user_by_email, set_password
+from db.queries.user import (
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+    rehash_password,
+    set_password,
+)
 from db.session import SessionLocal
 
 
@@ -89,13 +96,18 @@ def login(data):
         if not verify_password(user.password_hash, password):
             return _invalid_credentials()
 
-        if needs_rehash(user.password_hash):
-            user.password_hash = hash_password(password)
-            db.commit()
-            db.refresh(user)
+        # The session gets the version this password was checked against.
+        user_id, auth_version = user.id, user.auth_version
 
-    login_user(user.id, user.auth_version)
-    return current_user_payload(user)
+        if needs_rehash(user.password_hash) and not rehash_password(
+            db, user, hash_password(password)
+        ):
+            return _invalid_credentials()
+
+        payload = current_user_payload(user)
+
+    login_user(user_id, auth_version)
+    return payload
 
 
 @account_bp.post("/auth/logout")
@@ -129,26 +141,34 @@ class PasswordResource(MethodView):
                 )
         elif user.email is None:
             # A Spotify-only account without an email needs one to log in with.
-            if not data["email"]:
-                abort(
-                    422,
-                    errors={"json": {"email": ["Missing data for required field."]}},
-                )
+            given = {} if data["email"] is None else {"email": data["email"]}
+            errors = EmailSchema().validate(given)
+            if errors:
+                abort(422, errors={"json": errors})
             email = data["email"]
 
         new_hash = hash_password(data["new_password"])
 
         with SessionLocal() as db:
             try:
-                updated = set_password(db, user.id, new_hash, email=email)
+                auth_version = set_password(
+                    db,
+                    user.id,
+                    new_hash,
+                    expected_version=user.auth_version,
+                    email=email,
+                )
             except IntegrityError:
                 return _email_taken()
 
-        if updated is None:
-            return unauthorized()
+            if auth_version is None:
+                logout_user()
+                return session_revoked()
 
-        login_user(updated.id, updated.auth_version)
-        return current_user_payload(updated)
+            payload = current_user_payload(get_user_by_id(db, user.id))
+
+        login_user(user.id, auth_version)
+        return payload
 
 
 @account_bp.route("/me/spotify")

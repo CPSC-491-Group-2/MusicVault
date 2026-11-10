@@ -1,8 +1,11 @@
 import uuid
 
+import pytest
+from argon2 import PasswordHasher
 from sqlalchemy import func, select
 
-from app.security.passwords import hash_password
+import app.routes.account as account_routes
+from app.security.passwords import hash_password, needs_rehash, verify_password
 from db.queries.user import create_user
 from db.session import SessionLocal
 from models.song import Song
@@ -35,6 +38,7 @@ EMAIL_TAKEN = {
     "message": "An account with this email already exists.",
     "code": "email_taken",
 }
+STALE_HASHER = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)
 
 
 def make_user(email=None, password=None, display_name="Test User"):
@@ -55,6 +59,32 @@ def login(client, email, password):
 def auth_version(user_id):
     with SessionLocal() as db:
         return db.get(User, user_id).auth_version
+
+
+def stored_user(user_id):
+    with SessionLocal() as db:
+        return db.get(User, user_id)
+
+
+def store_stale_hash(user_id, password):
+    with SessionLocal() as db:
+        db.get(User, user_id).password_hash = STALE_HASHER.hash(password)
+        db.commit()
+
+
+def change_password_mid_request(monkeypatch, user_id, **columns):
+    # The routes hash after they have checked access and before they write.
+    def change_then_hash(password):
+        with SessionLocal() as db:
+            user = db.get(User, user_id)
+            user.password_hash = hash_password("other-password-1")
+            user.auth_version += 1
+            for name, value in columns.items():
+                setattr(user, name, value)
+            db.commit()
+        return hash_password(password)
+
+    monkeypatch.setattr(account_routes, "hash_password", change_then_hash)
 
 
 def link_spotify(user_id):
@@ -224,7 +254,17 @@ def test_passwordless_user_sets_password_and_email(
 
     missing = auth_client.put(PASSWORD, json={"new_password": "spotify-pass-1"})
     assert missing.status_code == 422
-    assert "email" in missing.get_json()["errors"]["json"]
+    assert missing.get_json()["errors"]["json"] == {
+        "email": ["Missing data for required field."]
+    }
+
+    invalid = auth_client.put(
+        PASSWORD, json={"email": "not-an-email", "new_password": "spotify-pass-1"}
+    )
+    assert invalid.status_code == 422
+    assert invalid.get_json()["errors"]["json"] == {
+        "email": ["Not a valid email address."]
+    }
 
     taken = auth_client.put(
         PASSWORD, json={"email": "TAKEN@example.com", "new_password": "spotify-pass-1"}
@@ -298,3 +338,86 @@ def test_account_changes_require_login(auth_client):
     ):
         assert response.status_code == 401
         assert response.get_json()["code"] == "unauthorized"
+
+
+def test_login_upgrades_a_stale_hash(auth_client, clean_database):
+    user_id = make_user("stale@example.com")
+    store_stale_hash(user_id, "correct-horse-1")
+
+    response = login(auth_client, "stale@example.com", "correct-horse-1")
+
+    assert response.status_code == 200
+    user = stored_user(user_id)
+    assert verify_password(user.password_hash, "correct-horse-1")
+    assert not needs_rehash(user.password_hash)
+    assert user.auth_version == 1
+
+
+def test_login_rehash_never_restores_a_changed_password(
+    auth_client, monkeypatch, clean_database
+):
+    user_id = make_user("stale@example.com")
+    store_stale_hash(user_id, "correct-horse-1")
+    change_password_mid_request(monkeypatch, user_id)
+
+    response = login(auth_client, "stale@example.com", "correct-horse-1")
+
+    assert response.status_code == 401
+    assert response.get_json() == INVALID_CREDENTIALS
+    assert verify_password(stored_user(user_id).password_hash, "other-password-1")
+    with auth_client.session_transaction() as sess:
+        assert "user_id" not in sess
+
+
+@pytest.mark.parametrize(
+    ("password", "body", "columns"),
+    [
+        ("correct-horse-1", {"current_password": "correct-horse-1"}, {}),
+        (None, {"email": "mine@example.com"}, {"email": "first@example.com"}),
+    ],
+    ids=["has_password", "spotify_only"],
+)
+def test_password_change_that_loses_a_race_is_revoked(
+    auth_client, log_in, monkeypatch, clean_database, password, body, columns
+):
+    user_id = make_user("race@example.com" if password else None, password)
+    log_in(user_id)
+    change_password_mid_request(monkeypatch, user_id, **columns)
+
+    response = auth_client.put(
+        PASSWORD, json={**body, "new_password": "mine-password-1"}
+    )
+
+    assert response.status_code == 401
+    assert response.get_json()["code"] == "session_revoked"
+    user = stored_user(user_id)
+    assert verify_password(user.password_hash, "other-password-1")
+    assert user.auth_version == 2
+    with auth_client.session_transaction() as sess:
+        assert "user_id" not in sess
+
+
+@pytest.mark.parametrize(
+    ("password", "body"),
+    [
+        (
+            "correct-horse-1",
+            {"current_password": "correct-horse-1", "email": "not-an-email"},
+        ),
+        (None, {"email": ""}),
+    ],
+    ids=["has_password", "email_already_set"],
+)
+def test_password_change_ignores_an_email_it_does_not_need(
+    auth_client, log_in, clean_database, password, body
+):
+    user_id = make_user("kept@example.com", password)
+    log_in(user_id)
+
+    response = auth_client.put(
+        PASSWORD, json={**body, "new_password": "correct-horse-2"}
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["email"] == "kept@example.com"
+    assert response.get_json()["has_password"] is True
