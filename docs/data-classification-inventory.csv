@@ -2,6 +2,7 @@ table,column,classification,category,rationale
 users,id,confidential,User identifier,Links every per-user row back to one person
 users,email,confidential,Contact PII,Directly identifies a person
 users,password_hash,restricted,Credential,Hash of a login secret; offline cracking would expose the password
+users,auth_version,internal,System metadata,Counter bumped on password change to revoke older sessions
 users,display_name,confidential,Profile PII,User-chosen name that can identify a person
 users,created_at,internal,System metadata,Row audit timestamp
 users,updated_at,internal,System metadata,Row audit timestamp
