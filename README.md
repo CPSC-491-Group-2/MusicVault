@@ -279,6 +279,27 @@ The backend runs at:
 http://127.0.0.1:5000
 ```
 
+## Database Migrations
+
+Schema changes ship as numbered, idempotent SQL files in `backend/DDL/migrations/`, each wrapped in its own `BEGIN`/`COMMIT`. The same change also goes into `backend/DDL/initial_schema.sql`, so fresh installs and tests still get the latest schema.
+
+`scripts/migrate.py` applies pending files in filename order and records each one in a `schema_migrations` table, so re-running it only applies new files. It reads `DATABASE_URL` from the shell or the repo-root `.env`.
+
+Run it locally:
+
+```bash
+cd backend
+python scripts/migrate.py
+```
+
+See what's pending without applying anything:
+
+```bash
+python scripts/migrate.py --dry-run
+```
+
+The Deploy workflow runs it before starting the new containers, and stops the deploy if a migration fails.
+
 ## Running the Frontend
 
 Open another terminal and navigate to the frontend directory:
