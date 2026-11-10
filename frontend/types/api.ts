@@ -24,7 +24,11 @@ export type AuthErrorCode =
   | "already_connected"
   | "invalid_credentials"
   | "email_taken"
-  | "service_unavailable";
+  | "service_unavailable"
+  | "current_password_wrong"
+  | "password_required"
+  | "session_revoked"
+  | "unauthorized";
 export interface RegisterRequest {
   email: string;
   password: string;
@@ -33,6 +37,11 @@ export interface RegisterRequest {
 export interface LoginRequest {
   email: string;
   password: string;
+}
+export interface ChangePasswordRequest {
+  current_password?: string;
+  email?: string;
+  new_password: string;
 }
 export interface Song {
   id: number;

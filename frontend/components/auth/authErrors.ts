@@ -17,9 +17,15 @@ const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   email_taken: "An account with that email already exists. Log in instead.",
   service_unavailable:
     "Email sign-in isn't available right now. Try Spotify, or check back soon.",
+  current_password_wrong:
+    "Your current password doesn't match. Check it and try again.",
+  password_required:
+    "Add a password before you disconnect Spotify, so you can still log in.",
+  session_revoked: "Your password was changed on another device. Log in again.",
+  unauthorized: "You're logged out. Log in to continue.",
 };
 
-function isAuthErrorCode(code: string): code is AuthErrorCode {
+export function isAuthErrorCode(code: string): code is AuthErrorCode {
   return Object.hasOwn(AUTH_ERROR_MESSAGES, code);
 }
 
