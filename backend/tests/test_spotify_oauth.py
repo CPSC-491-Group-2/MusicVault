@@ -478,6 +478,28 @@ def test_connect_with_revoked_session_links_nothing(
         assert db.scalar(select(func.count()).select_from(SpotifyAccount)) == 0
 
 
+def test_connect_revoked_while_spotify_responds_links_nothing(
+    oauth_client, spotify, monkeypatch, clean_database
+):
+    user_id = log_in_local_user(oauth_client)
+    state = start_connect(oauth_client)
+    fetch_profile = spotify_auth.requests.get
+
+    def revoke_then_fetch(url, **kwargs):
+        with SessionLocal() as db:
+            db.get(User, user_id).auth_version = 2
+            db.commit()
+        return fetch_profile(url, **kwargs)
+
+    monkeypatch.setattr(spotify_auth.requests, "get", revoke_then_fetch)
+
+    response = oauth_client.get(f"{CALLBACK}?code=auth-code&state={state}")
+
+    assert response.location == f"{FRONTEND_URL}/profile?error=invalid_state"
+    with SessionLocal() as db:
+        assert db.scalar(select(func.count()).select_from(SpotifyAccount)) == 0
+
+
 # --- configuration ---------------------------------------------------------
 
 

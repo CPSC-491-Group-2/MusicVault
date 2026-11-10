@@ -79,6 +79,13 @@ def link_spotify_to_user(
     spotify_id = profile["id"]
     user_id = user.id
 
+    # Locked until commit, so a password change can't land between check and link.
+    current_version = db.scalar(
+        select(User.auth_version).where(User.id == user_id).with_for_update()
+    )
+    if current_version != user.auth_version:
+        return "invalid_state"
+
     taken = get_spotify_account_by_spotify_id(db, spotify_id)
     if taken is not None:
         return "already_connected" if taken.user_id == user_id else "spotify_in_use"
