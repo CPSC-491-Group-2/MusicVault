@@ -67,9 +67,10 @@ def auth_client(auth_app):
 def log_in(auth_client):
     """Put a user in auth_client's session, the same way the OAuth callback does."""
 
-    def _log_in(user_id):
+    def _log_in(user_id, auth_version=1):
         with auth_client.session_transaction() as sess:
             sess["user_id"] = str(user_id)
+            sess["auth_version"] = auth_version
 
     return _log_in
 

@@ -100,7 +100,7 @@ def test_app_starts_without_any_secrets(load_config):
     assert app.test_client().get("/api/v1/health").status_code == 200
 
 
-@pytest.mark.parametrize("path", ["/login", "/callback"])
+@pytest.mark.parametrize("path", ["/login", "/callback", "/connect"])
 @pytest.mark.parametrize("missing", REQUIRED_SETTINGS)
 def test_login_refuses_to_run_when_env_var_missing(load_config, missing, path):
     env = {key: value for key, value in FULL_ENV.items() if key != missing}

@@ -22,6 +22,16 @@ def assert_unauthorized(response):
     assert response.get_json() == {
         "error": "Unauthorized",
         "message": "You must be logged in to access this resource.",
+        "code": "unauthorized",
+    }
+
+
+def assert_revoked(response):
+    assert response.status_code == 401
+    assert response.get_json() == {
+        "error": "Unauthorized",
+        "message": "Your session has ended. Please log in again.",
+        "code": "session_revoked",
     }
 
 
@@ -87,6 +97,23 @@ def test_unknown_user_is_rejected(auth_client, log_in, require_live_database, pa
     log_in(uuid.uuid4())
 
     assert_unauthorized(auth_client.get(path))
+
+
+@pytest.mark.parametrize("path", PROTECTED_ROUTES)
+def test_session_without_auth_version_is_revoked(auth_client, db_user, path):
+    with auth_client.session_transaction() as sess:
+        sess["user_id"] = str(db_user)
+
+    assert_revoked(auth_client.get(path))
+    with auth_client.session_transaction() as sess:
+        assert "user_id" not in sess
+
+
+@pytest.mark.parametrize("path", PROTECTED_ROUTES)
+def test_session_with_old_auth_version_is_revoked(auth_client, log_in, db_user, path):
+    log_in(db_user, auth_version=0)
+
+    assert_revoked(auth_client.get(path))
 
 
 # --- authenticated ---------------------------------------------------------

@@ -5,7 +5,7 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 import requests
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app import create_app
 from app.services import spotify_auth
@@ -345,6 +345,137 @@ def test_callback_profile_request_rejected(oauth_client, spotify):
 
     assert auth_error(response) == "spotify_error"
     assert session_user_id(oauth_client) is None
+
+
+CONNECT = "/api/auth/spotify/connect"
+
+
+def log_in_local_user(client):
+    with SessionLocal() as db:
+        user = User(email=f"{uuid.uuid4()}@example.com", display_name="Local User")
+        db.add(user)
+        db.commit()
+        user_id = user.id
+    with client.session_transaction() as sess:
+        sess["user_id"] = str(user_id)
+        sess["auth_version"] = 1
+    return user_id
+
+
+def start_connect(client):
+    client.get(CONNECT)
+    with client.session_transaction() as sess:
+        return sess["spotify_oauth_state"]
+
+
+def test_connect_requires_login(oauth_client):
+    response = oauth_client.get(CONNECT)
+
+    assert response.status_code == 302
+    assert response.location == f"{FRONTEND_URL}/login"
+
+
+def test_connect_links_spotify_to_the_logged_in_user(
+    oauth_client, spotify, clean_database
+):
+    user_id = log_in_local_user(oauth_client)
+    state = start_connect(oauth_client)
+
+    response = oauth_client.get(f"{CALLBACK}?code=auth-code&state={state}")
+
+    assert response.location == f"{FRONTEND_URL}/profile?spotify=connected"
+    assert session_user_id(oauth_client) == str(user_id)
+    with SessionLocal() as db:
+        account = db.scalar(
+            select(SpotifyAccount).where(
+                SpotifyAccount.spotify_account_id == spotify.spotify_id
+            )
+        )
+        assert account.user_id == user_id
+        assert db.scalar(select(func.count()).select_from(User)) == 1
+
+
+def test_connect_rejects_spotify_account_of_another_user(app, spotify, clean_database):
+    other = app.test_client()
+    other.get(f"{CALLBACK}?code=c1&state={start_login(other)}")
+    client = app.test_client()
+    log_in_local_user(client)
+
+    response = client.get(f"{CALLBACK}?code=c2&state={start_connect(client)}")
+
+    assert response.location == f"{FRONTEND_URL}/profile?error=spotify_in_use"
+
+
+def test_connect_twice_is_already_connected(oauth_client, spotify, clean_database):
+    log_in_local_user(oauth_client)
+    oauth_client.get(f"{CALLBACK}?code=c1&state={start_connect(oauth_client)}")
+    spotify.profile_response = FakeResponse(200, {"id": f"spotify-{uuid.uuid4()}"})
+
+    response = oauth_client.get(
+        f"{CALLBACK}?code=c2&state={start_connect(oauth_client)}"
+    )
+
+    assert response.location == f"{FRONTEND_URL}/profile?error=already_connected"
+
+
+@pytest.mark.parametrize(
+    ("start", "expected"),
+    [
+        (start_login, f"{FRONTEND_URL}/?auth_error=spotify_not_allowed"),
+        (start_connect, f"{FRONTEND_URL}/profile?error=spotify_not_allowed"),
+    ],
+)
+def test_spotify_403_profile_is_not_allowed(
+    oauth_client, spotify, clean_database, start, expected
+):
+    spotify.profile_response = FakeResponse(403)
+    log_in_local_user(oauth_client)
+    state = start(oauth_client)
+
+    response = oauth_client.get(f"{CALLBACK}?code=auth-code&state={state}")
+
+    assert response.location == expected
+
+
+def test_connect_with_forged_state_reports_on_profile(
+    oauth_client, spotify, clean_database
+):
+    log_in_local_user(oauth_client)
+    state = start_connect(oauth_client)
+
+    forged = oauth_client.get(f"{CALLBACK}?code=auth-code&state=forged")
+    replay = oauth_client.get(f"{CALLBACK}?code=auth-code&state={state}")
+
+    assert forged.location == f"{FRONTEND_URL}/profile?error=invalid_state"
+    assert auth_error(replay) == "invalid_state"
+    assert spotify.token_requests == []
+
+
+def test_login_drops_a_stale_connect_flag(oauth_client, spotify, clean_database):
+    log_in_local_user(oauth_client)
+    start_connect(oauth_client)
+
+    response = oauth_client.get(
+        f"{CALLBACK}?code=auth-code&state={start_login(oauth_client)}"
+    )
+
+    assert response.location == FRONTEND_URL
+
+
+def test_connect_with_revoked_session_links_nothing(
+    oauth_client, spotify, clean_database
+):
+    user_id = log_in_local_user(oauth_client)
+    state = start_connect(oauth_client)
+    with SessionLocal() as db:
+        db.get(User, user_id).auth_version = 2
+        db.commit()
+
+    response = oauth_client.get(f"{CALLBACK}?code=auth-code&state={state}")
+
+    assert response.location == f"{FRONTEND_URL}/profile?error=invalid_state"
+    with SessionLocal() as db:
+        assert db.scalar(select(func.count()).select_from(SpotifyAccount)) == 0
 
 
 # --- configuration ---------------------------------------------------------
