@@ -57,6 +57,11 @@
   perspective: calc(var(--ls-size) * 6);
 }
 
+.inline {
+  /* lay out at --ls-size tall so the fold room never stretches a line */
+  margin-block: calc(var(--ls-size) * -0.25);
+}
+
 .stack {
   position: absolute;
   inset: 0;

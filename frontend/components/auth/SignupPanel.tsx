@@ -38,6 +38,7 @@ export function SignupPanel({
   className,
 }: SignupPanelProps) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitCount, setSubmitCount] = useState(0);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -65,7 +66,10 @@ export function SignupPanel({
       nextErrors.password = "Use 128 characters or fewer";
     }
 
-    flushSync(() => setFieldErrors(nextErrors));
+    flushSync(() => {
+      setFieldErrors(nextErrors);
+      setSubmitCount((count) => count + 1);
+    });
 
     if (nextErrors.email || nextErrors.password) {
       form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
@@ -106,6 +110,7 @@ export function SignupPanel({
           required
           disabled={pending}
           error={fieldErrors.email}
+          errorKey={submitCount}
         />
         <TextField
           label="Password"
@@ -116,16 +121,17 @@ export function SignupPanel({
           required
           disabled={pending}
           error={fieldErrors.password}
+          errorKey={submitCount}
         />
         <Button
           type="submit"
           variant="primary"
           size="lg"
-          disabled={pending}
-          aria-busy={pending || undefined}
+          loading={pending}
+          loadingLabel="Creating account"
           className="w-full"
         >
-          {pending ? "Creating account" : "Create account"}
+          Create account
         </Button>
       </form>
 
