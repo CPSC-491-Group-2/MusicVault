@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.spotify_account import SpotifyAccount
@@ -18,6 +20,25 @@ def get_spotify_account_by_spotify_id(
     )
 
 
+def _store_profile_and_token(
+    account: SpotifyAccount, profile: dict, token: dict
+) -> None:
+    spotify_email = profile.get("email")
+
+    if spotify_email:
+        account.email = spotify_email.strip()
+
+    account.spotify_user_id = profile["id"]
+    account.display_name = profile.get("display_name")
+    account.access_token = token["access_token"]
+    # Spotify may omit the refresh token; keep the one we already have.
+    account.refresh_token = token.get("refresh_token") or account.refresh_token
+    account.token_expires_at = datetime.now(timezone.utc) + timedelta(
+        seconds=token.get("expires_in", 3600)
+    )
+    account.scope = token.get("scope")
+
+
 def link_spotify_account(db: Session, *, profile: dict, token: dict) -> User:
     """Create or update the user behind a Spotify login and return them.
 
@@ -26,9 +47,6 @@ def link_spotify_account(db: Session, *, profile: dict, token: dict) -> User:
     someone take over an existing MusicVault account.
     """
     spotify_id = profile["id"]
-    expires_at = datetime.now(timezone.utc) + timedelta(
-        seconds=token.get("expires_in", 3600)
-    )
 
     account = get_spotify_account_by_spotify_id(db, spotify_id)
 
@@ -47,19 +65,50 @@ def link_spotify_account(db: Session, *, profile: dict, token: dict) -> User:
     else:
         user = account.user
 
-    spotify_email = profile.get("email")
-
-    if spotify_email:
-        account.email = spotify_email.strip()
-
-    account.spotify_user_id = spotify_id
-    account.display_name = profile.get("display_name")
-    account.access_token = token["access_token"]
-    # Spotify may omit the refresh token; keep the one we already have.
-    account.refresh_token = token.get("refresh_token") or account.refresh_token
-    account.token_expires_at = expires_at
-    account.scope = token.get("scope")
+    _store_profile_and_token(account, profile, token)
 
     db.commit()
     db.refresh(user)
     return user
+
+
+def link_spotify_to_user(
+    db: Session, user: User, *, profile: dict, token: dict
+) -> str | None:
+    """Link a Spotify account to an existing user, or return why it cannot be."""
+    spotify_id = profile["id"]
+    user_id = user.id
+
+    taken = get_spotify_account_by_spotify_id(db, spotify_id)
+    if taken is not None:
+        return "already_connected" if taken.user_id == user_id else "spotify_in_use"
+
+    own = db.scalar(select(SpotifyAccount).where(SpotifyAccount.user_id == user_id))
+    if own is not None:
+        return "already_connected"
+
+    account = SpotifyAccount(user_id=user_id, spotify_account_id=spotify_id)
+    _store_profile_and_token(account, profile, token)
+    db.add(account)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        taken = get_spotify_account_by_spotify_id(db, spotify_id)
+        if taken is not None and taken.user_id != user_id:
+            return "spotify_in_use"
+        return "already_connected"
+
+    return None
+
+
+def unlink_spotify(db: Session, user_id: uuid.UUID) -> bool:
+    account = db.scalar(
+        select(SpotifyAccount).where(SpotifyAccount.user_id == user_id)
+    )
+    if account is None:
+        return False
+    db.delete(account)
+    db.commit()
+    return True

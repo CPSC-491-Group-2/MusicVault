@@ -19,6 +19,10 @@ class SpotifyRefreshTokenError(SpotifyAuthError):
     """Spotify explicitly rejected the refresh token."""
 
 
+class SpotifyNotAllowedError(SpotifyAuthError):
+    """Spotify refused the request, e.g. a Development Mode app's allowlist."""
+
+
 def build_authorize_url(
     *, client_id: str, redirect_uri: str, scope: str, state: str
 ) -> str:
@@ -125,6 +129,9 @@ def get_current_user_profile(access_token: str) -> dict:
         )
     except requests.RequestException as exc:
         raise SpotifyAuthError("Could not reach Spotify profile endpoint") from exc
+
+    if response.status_code == 403:
+        raise SpotifyNotAllowedError("Spotify refused the profile request (403)")
 
     if response.status_code != 200:
         raise SpotifyAuthError(f"Profile request failed ({response.status_code})")

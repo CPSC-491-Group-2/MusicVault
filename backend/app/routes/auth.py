@@ -3,14 +3,15 @@ from urllib.parse import urlencode
 
 from flask import Blueprint, current_app, jsonify, redirect, request, session
 
-from app.auth import login_user, logout_user
+from app.auth import get_session_user, login_user, logout_user
 from app.services.spotify_auth import (
     SpotifyAuthError,
+    SpotifyNotAllowedError,
     build_authorize_url,
     exchange_code_for_token,
     get_current_user_profile,
 )
-from db.queries.spotify_account import link_spotify_account
+from db.queries.spotify_account import link_spotify_account, link_spotify_to_user
 from db.session import SessionLocal
 
 # Plain Flask blueprint (not flask-smorest): these endpoints are browser
@@ -18,6 +19,7 @@ from db.session import SessionLocal
 auth_bp = Blueprint("auth", __name__)
 
 STATE_SESSION_KEY = "spotify_oauth_state"
+CONNECT_SESSION_KEY = "spotify_connect_user_id"
 REQUIRED_SETTINGS = (
     "SECRET_KEY",
     "SPOTIFY_CLIENT_ID",
@@ -50,12 +52,18 @@ def _redirect_to_frontend(error=None):
     return redirect(url)
 
 
-@auth_bp.get("/login")
-def spotify_login():
-    not_configured = _not_configured_response()
-    if not_configured:
-        return not_configured
+def _redirect_to_profile(**params):
+    url = current_app.config["FRONTEND_URL"].rstrip("/")
+    return redirect(f"{url}/profile?{urlencode(params)}")
 
+
+def _callback_error(code, connect):
+    if connect:
+        return _redirect_to_profile(error=code)
+    return _redirect_to_frontend(code)
+
+
+def _start_authorization():
     # Random, unguessable value tied to this browser's signed session cookie.
     # The callback only proceeds if Spotify hands the same value back, which
     # stops another site from completing a login on this user's behalf.
@@ -74,6 +82,33 @@ def spotify_login():
     )
 
 
+@auth_bp.get("/login")
+def spotify_login():
+    not_configured = _not_configured_response()
+    if not_configured:
+        return not_configured
+
+    # A stale connect flag must not turn a login into a connect.
+    session.pop(CONNECT_SESSION_KEY, None)
+
+    return _start_authorization()
+
+
+@auth_bp.get("/connect")
+def spotify_connect():
+    not_configured = _not_configured_response()
+    if not_configured:
+        return not_configured
+
+    user, _ = get_session_user()
+    if user is None:
+        return redirect(current_app.config["FRONTEND_URL"].rstrip("/") + "/login")
+
+    session[CONNECT_SESSION_KEY] = str(user.id)
+
+    return _start_authorization()
+
+
 @auth_bp.get("/callback")
 def spotify_callback():
     not_configured = _not_configured_response()
@@ -82,6 +117,8 @@ def spotify_callback():
 
     # pop() makes each state single-use, even if this attempt fails.
     expected_state = session.pop(STATE_SESSION_KEY, None)
+    connect_user_id = session.pop(CONNECT_SESSION_KEY, None)
+    connect = connect_user_id is not None
     received_state = request.args.get("state")
     if (
         not expected_state
@@ -89,16 +126,23 @@ def spotify_callback():
         or not secrets.compare_digest(expected_state, received_state)
     ):
         current_app.logger.warning("Spotify callback rejected: invalid state")
-        return _redirect_to_frontend("invalid_state")
+        return _callback_error("invalid_state", connect)
+
+    user = None
+    if connect:
+        # A revoked or replaced session must not finish linking.
+        user, _ = get_session_user()
+        if user is None or str(user.id) != connect_user_id:
+            return _callback_error("invalid_state", True)
 
     if request.args.get("error"):
         if request.args["error"] == "access_denied":
-            return _redirect_to_frontend("access_denied")
-        return _redirect_to_frontend("spotify_error")
+            return _callback_error("access_denied", connect)
+        return _callback_error("spotify_error", connect)
 
     code = request.args.get("code")
     if not code:
-        return _redirect_to_frontend("spotify_error")
+        return _callback_error("spotify_error", connect)
 
     config = current_app.config
     try:
@@ -109,9 +153,19 @@ def spotify_callback():
             redirect_uri=config["SPOTIFY_REDIRECT_URI"],
         )
         profile = get_current_user_profile(token["access_token"])
+    except SpotifyNotAllowedError as exc:
+        current_app.logger.warning("Spotify callback not allowed: %s", exc)
+        return _callback_error("spotify_not_allowed", connect)
     except SpotifyAuthError as exc:
         current_app.logger.warning("Spotify callback failed: %s", exc)
-        return _redirect_to_frontend("spotify_error")
+        return _callback_error("spotify_error", connect)
+
+    if connect:
+        with SessionLocal() as db:
+            problem = link_spotify_to_user(db, user, profile=profile, token=token)
+        if problem:
+            return _callback_error(problem, True)
+        return _redirect_to_profile(spotify="connected")
 
     with SessionLocal() as db:
         user = link_spotify_account(db, profile=profile, token=token)
