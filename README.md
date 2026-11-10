@@ -379,6 +379,8 @@ API errors use a consistent JSON structure:
 }
 ```
 
+Account and auth errors, a malformed request body and a wrong HTTP method also include a machine-readable `code`, such as `invalid_credentials`, `bad_request` or `method_not_allowed`.
+
 ## OpenAPI Documentation
 
 The Flask backend provides interactive OpenAPI documentation through Swagger UI.

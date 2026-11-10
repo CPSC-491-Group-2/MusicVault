@@ -3,6 +3,19 @@ from flask import jsonify
 
 def register_error_handlers(app):
 
+    @app.errorhandler(400)
+    def bad_request(error):
+        return (
+            jsonify(
+                {
+                    "error": "Bad Request",
+                    "message": "The request is malformed.",
+                    "code": "bad_request",
+                }
+            ),
+            400,
+        )
+
     @app.errorhandler(404)
     def not_found(error):
         return (
@@ -22,6 +35,7 @@ def register_error_handlers(app):
                 {
                     "error": "Method Not Allowed",
                     "message": "The requested method is not allowed for this resource.",
+                    "code": "method_not_allowed",
                 }
             ),
             405,
