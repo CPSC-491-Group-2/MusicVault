@@ -14,10 +14,14 @@ export function LoginForm({ initialError }: { initialError?: string }) {
     initialError as AuthErrorCode | undefined,
   );
   const [pending, setPending] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<string, string> | undefined
+  >();
 
   async function handleSubmit(values: LoginRequest) {
     setPending(true);
     setError(undefined);
+    setFieldErrors(undefined);
 
     const result = await loginWithEmail(values);
     if (result.ok) {
@@ -28,6 +32,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
     }
 
     setError(result.error);
+    setFieldErrors(result.fieldErrors);
     setPending(false);
   }
 
@@ -35,6 +40,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
     <LoginPanel
       titleAs="h1"
       error={error}
+      fieldErrors={fieldErrors}
       pending={pending}
       onSubmit={handleSubmit}
     />

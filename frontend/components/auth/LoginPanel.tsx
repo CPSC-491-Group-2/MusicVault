@@ -15,6 +15,7 @@ import { SpotifyContinueButton } from "./SpotifyContinueButton";
 type LoginPanelProps = {
   titleAs?: "h1" | "h2";
   error?: AuthErrorCode;
+  fieldErrors?: Partial<Record<keyof LoginRequest, string>>;
   pending?: boolean;
   onSubmit?: (values: LoginRequest) => void;
   className?: string;
@@ -33,6 +34,7 @@ const TITLE_CLASSES: Record<"h1" | "h2", string> = {
 export function LoginPanel({
   titleAs: Title = "h1",
   error,
+  fieldErrors: serverFieldErrors,
   pending = false,
   onSubmit,
   className,
@@ -83,7 +85,7 @@ export function LoginPanel({
           autoComplete="email"
           required
           disabled={pending}
-          error={fieldErrors.email}
+          error={fieldErrors.email ?? serverFieldErrors?.email}
         />
         <TextField
           label="Password"
@@ -92,7 +94,7 @@ export function LoginPanel({
           autoComplete="current-password"
           required
           disabled={pending}
-          error={fieldErrors.password}
+          error={fieldErrors.password ?? serverFieldErrors?.password}
         />
         <Button
           type="submit"
