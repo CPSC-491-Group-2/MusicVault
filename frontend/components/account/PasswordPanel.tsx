@@ -19,6 +19,7 @@ export type PasswordPanelValues = {
 type PasswordPanelProps = {
   user: User;
   error?: AuthErrorCode;
+  fieldErrors?: Partial<Record<keyof PasswordPanelValues, string>>;
   pending?: boolean;
   saved?: boolean;
   onSubmit?: (values: PasswordPanelValues) => void;
@@ -34,6 +35,7 @@ type FieldErrors = {
 export function PasswordPanel({
   user,
   error,
+  fieldErrors: serverFieldErrors,
   pending = false,
   saved = false,
   onSubmit,
@@ -124,7 +126,10 @@ export function PasswordPanel({
             autoComplete="current-password"
             required
             disabled={pending}
-            error={fieldErrors.current_password}
+            error={
+              fieldErrors.current_password ??
+              serverFieldErrors?.current_password
+            }
           />
         ) : null}
         {needsEmail ? (
@@ -135,7 +140,7 @@ export function PasswordPanel({
             autoComplete="email"
             required
             disabled={pending}
-            error={fieldErrors.email}
+            error={fieldErrors.email ?? serverFieldErrors?.email}
           />
         ) : null}
         <TextField
@@ -146,7 +151,7 @@ export function PasswordPanel({
           hint="8 to 128 characters"
           required
           disabled={pending}
-          error={fieldErrors.new_password}
+          error={fieldErrors.new_password ?? serverFieldErrors?.new_password}
         />
         <Button
           type="submit"
