@@ -39,3 +39,26 @@ export interface Song {
   title: string;
   artist: string;
 }
+
+export interface SpotifyArtist {
+  spotify_id: string;
+  name: string;
+}
+
+export interface SpotifyAlbum {
+  spotify_id: string | null;
+  name: string | null;
+  image_url: string | null;
+}
+
+export interface SpotifyTrack {
+  spotify_id: string;
+  title: string;
+  artists: SpotifyArtist[];
+  album: SpotifyAlbum;
+  duration_ms: number | null;
+  popularity: number | null;
+  explicit: boolean;
+  spotify_url: string | null;
+  isrc: string | null;
+}
