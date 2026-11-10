@@ -42,6 +42,7 @@ export function PasswordPanel({
   className,
 }: PasswordPanelProps) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitCount, setSubmitCount] = useState(0);
   const hasPassword = user.has_password;
   const needsEmail = !hasPassword && user.email === null;
   const submitLabel = hasPassword ? "Change password" : "Add password";
@@ -81,7 +82,10 @@ export function PasswordPanel({
       nextErrors.new_password = "Use 128 characters or fewer";
     }
 
-    flushSync(() => setFieldErrors(nextErrors));
+    flushSync(() => {
+      setFieldErrors(nextErrors);
+      setSubmitCount((count) => count + 1);
+    });
 
     if (
       nextErrors.current_password ||
@@ -130,6 +134,7 @@ export function PasswordPanel({
               fieldErrors.current_password ??
               serverFieldErrors?.current_password
             }
+            errorKey={submitCount}
           />
         ) : null}
         {needsEmail ? (
@@ -141,6 +146,7 @@ export function PasswordPanel({
             required
             disabled={pending}
             error={fieldErrors.email ?? serverFieldErrors?.email}
+            errorKey={submitCount}
           />
         ) : null}
         <TextField
@@ -152,16 +158,17 @@ export function PasswordPanel({
           required
           disabled={pending}
           error={fieldErrors.new_password ?? serverFieldErrors?.new_password}
+          errorKey={submitCount}
         />
         <Button
           type="submit"
           variant="primary"
           size="md"
-          disabled={pending}
-          aria-busy={pending || undefined}
+          loading={pending}
+          loadingLabel="Saving"
           className="self-start"
         >
-          {pending ? "Saving" : submitLabel}
+          {submitLabel}
         </Button>
       </form>
     </Surface>
