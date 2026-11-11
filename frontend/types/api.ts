@@ -62,3 +62,12 @@ export interface SpotifyTrack {
   spotify_url: string | null;
   isrc: string | null;
 }
+
+export interface SpotifySearchResponse {
+  items: SpotifyTrack[];
+  total: number;
+  limit: number;
+  offset: number;
+  next: string | null;
+  previous: string | null;
+}
