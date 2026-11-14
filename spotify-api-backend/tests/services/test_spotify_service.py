@@ -131,7 +131,8 @@ def test_search_track_success(mock_get):
         params={
             "q": "Example Song Example Artist",
             "type": "track",
-            "limit": 10
+            "limit": 10,
+            "offset": 0,
         },
         timeout=10
     )
@@ -258,3 +259,62 @@ def test_get_artist_not_found(mock_get):
 
     with pytest.raises(RuntimeError, match=" not found"):
         service.get_artist("invalid-artist-id")
+
+
+@patch("services.spotify_service.requests.get")
+def test_search_track_accepts_offset(mock_get):
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "tracks": {
+            "items": []
+        }
+    }
+
+    mock_get.return_value = mock_response
+
+    service = SpotifyService(FAKE_TOKEN)
+
+    service.search_track(
+        query="Numb",
+        limit=10,
+        offset=5,
+    )
+
+    mock_get.assert_called_once_with(
+        "https://api.spotify.com/v1/search",
+        headers={
+            "Authorization": f"Bearer {FAKE_TOKEN}"
+        },
+        params={
+            "q": "Numb",
+            "type": "track",
+            "limit": 10,
+            "offset": 5,
+        },
+        timeout=10,
+    )
+
+def test_search_track_rejects_limit_above_10():
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(
+        ValueError,
+        match="limit must be between 1 and 10",
+    ):
+        service.search_track(
+            query="Numb",
+            limit=11,
+        )
+
+def test_search_track_rejects_negative_offset():
+    service = SpotifyService(FAKE_TOKEN)
+
+    with pytest.raises(
+        ValueError,
+        match="offset must be between 0 and 1000",
+    ):
+        service.search_track(
+            query="Numb",
+            offset=-1,
+        )

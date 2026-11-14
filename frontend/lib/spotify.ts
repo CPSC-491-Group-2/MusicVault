@@ -1,13 +1,10 @@
-import type { SpotifyTrack } from "@/types/api";
+//import type { SpotifyTrack } from "@/types/api";
 
-export interface SpotifySearchResponse {
-  items: SpotifyTrack[];
-  total: number;
-  limit: number;
-  offset: number;
-  next: string | null;
-  previous: string | null;
-}
+import type {
+  SpotifySearchResponse,
+} from "@/types/api";
+
+
 
 export type SpotifySearchErrorCode =
   | "unauthorized"
@@ -25,3 +22,76 @@ export type SpotifySearchResult =
       ok: false;
       error: SpotifySearchErrorCode;
     };
+
+export async function searchSpotifyTracks(
+  query: string,
+): Promise<SpotifySearchResult> {
+  const trimmedQuery = query.trim();
+
+  if (!trimmedQuery) {
+    return {
+      ok: true,
+      data: {
+        items: [],
+        total: 0,
+        limit: 12,
+        offset: 0,
+        next: null,
+        previous: null,
+      },
+    };
+  }
+
+  const params = new URLSearchParams({
+    q: trimmedQuery,
+    limit: "12",
+  });
+
+  const response = await fetch(
+    `/api/v1/spotify/search?${params.toString()}`,
+    {
+      method: "GET",
+      credentials: "same-origin",
+    },
+  );
+
+  if (response.ok) {
+    return {
+      ok: true,
+      data: await response.json(),
+    };
+  }
+
+  if (response.status === 401) {
+    return {
+      ok: false,
+      error: "unauthorized",
+    };
+  }
+
+  if (response.status === 403) {
+    return {
+      ok: false,
+      error: "spotify_not_connected",
+    };
+  }
+
+  if (response.status === 429) {
+    return {
+      ok: false,
+      error: "rate_limited",
+    };
+  }
+
+  if (response.status >= 500) {
+    return {
+      ok: false,
+      error: "service_unavailable",
+    };
+  }
+
+  return {
+    ok: false,
+    error: "unknown",
+  };
+}
