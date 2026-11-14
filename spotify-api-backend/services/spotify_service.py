@@ -135,8 +135,9 @@ class SpotifyService:
             "q": query.strip(),
             "type": "track",
             "limit": limit,
-            "offset": offset,
         }
+        if offset > 0:
+            params["offset"] = offset
 
         return self._request(endpoint, params)
 
