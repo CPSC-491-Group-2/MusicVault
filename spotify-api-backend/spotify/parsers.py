@@ -93,6 +93,30 @@ def normalize_top_tracks(response: dict) -> dict:
         "previous": response.get("previous"),
     }
 
+def normalize_search_tracks(response: dict) -> dict:
+    """Normalize a Spotify track-search response with pagination."""
+
+    if not isinstance(response, dict):
+        raise ValueError("Spotify search response must be an object")
+
+    tracks_page = response.get("tracks") or {}
+
+    if not isinstance(tracks_page, dict):
+        raise ValueError("Spotify search tracks must be an object")
+
+    tracks = tracks_page.get("items") or []
+
+    if not isinstance(tracks, list):
+        raise ValueError("Spotify search items must be a list")
+
+    return {
+        "items": [normalize_track(track) for track in tracks],
+        "total": tracks_page.get("total", len(tracks)),
+        "limit": tracks_page.get("limit", len(tracks)),
+        "offset": tracks_page.get("offset", 0),
+        "next": tracks_page.get("next"),
+        "previous": tracks_page.get("previous"),
+    }
 
 def parse_track(track_data: dict) -> TrackMetadata:
     """Convert Spotify track data into a TrackMetadata model."""

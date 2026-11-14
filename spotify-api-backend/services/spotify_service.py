@@ -1,7 +1,9 @@
 import requests
 
-from spotify.parsers import normalize_top_tracks
-
+from spotify.parsers import (
+    normalize_search_tracks,
+    normalize_top_tracks,
+)
 
 class SpotifyServiceError(RuntimeError):
     """Base exception for Spotify API request failures."""
@@ -112,23 +114,48 @@ class SpotifyService:
 
         return normalize_top_tracks(spotify_response)
 
-    def search_track(self, query: str, limit: int = 10):
-        # validating query (no empty search allow)
+    def search_track(
+        self,
+        query: str,
+        limit: int = 10,
+        offset: int = 0,
+    ):
         if not query or not query.strip():
-            raise ValueError("empty query")
+            raise ValueError("query cannot be empty")
 
-        # validating limit
-        if limit < 1 or limit > 50:
-            raise ValueError("limit must be between 1 and 50")
-        # build endpoint (Spotify endpoint for search is: /search)
+        if limit < 1 or limit > 10:
+            raise ValueError("limit must be between 1 and 10")
+
+        if offset < 0 or offset > 1000:
+            raise ValueError("offset must be between 0 and 1000")
+
         endpoint = f"{self.base_url}/search"
 
-        # build params
-        params = {"q": query, "type": "track", "limit": limit}
+        params = {
+            "q": query.strip(),
+            "type": "track",
+            "limit": limit,
+            "offset": offset,
+        }
 
-        # handle response
         return self._request(endpoint, params)
 
+    def get_normalized_search_tracks(
+        self,
+        query: str,
+        limit: int = 10,
+        offset: int = 0,
+    ) -> dict:
+        """Search Spotify tracks and return MusicVault-normalized results."""
+
+        spotify_response = self.search_track(
+            query=query,
+            limit=limit,
+            offset=offset,
+        )
+
+        return normalize_search_tracks(spotify_response)
+    
     def get_track(self, track_id: str):
         if not track_id or not track_id.strip():
             raise ValueError("track_id cannot be empty")
