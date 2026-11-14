@@ -183,7 +183,7 @@ export function Button(props: ButtonProps) {
             aria-hidden={loading ? undefined : true}
             className={`${CELL_CLASSES} ${loading ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-[4px] opacity-0"}`}
           >
-            <LoadingStack size={22} mono label="" />
+            <LoadingStack size={22} mono inline label="" />
             <span>
               {loadingLabel ?? children}
               {percent === undefined ? null : (
