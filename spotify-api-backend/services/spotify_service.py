@@ -121,7 +121,7 @@ class SpotifyService:
         offset: int = 0,
     ):
         if not query or not query.strip():
-            raise ValueError("query cannot be empty")
+            raise ValueError("empty query")
 
         if limit < 1 or limit > 10:
             raise ValueError("limit must be between 1 and 10")
