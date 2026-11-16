@@ -507,3 +507,109 @@ class SpotifyTopTracksResource(MethodView):
 
         except ValueError:
             abort(502, message="Invalid response from Spotify")
+
+@spotify_bp.route("/spotify/search")
+class SpotifySearchResource(MethodView):
+
+    @spotify_bp.arguments(
+        SpotifySearchQuerySchema,
+        location="query",
+    )
+    @spotify_bp.response(
+        200,
+        SpotifySearchResponseSchema,
+    )
+    def get(self, args):
+        """Search Spotify for normalized tracks."""
+
+        user_uuid, access_token = (
+            _get_current_user_spotify_token()
+        )
+
+        try:
+            for attempt in range(2):
+                spotify_service = SpotifyService(
+                    access_token
+                )
+
+                try:
+                    return (
+                        spotify_service
+                        .get_normalized_search_tracks(
+                            query=args["q"],
+                            limit=args["limit"],
+                            offset=args["offset"],
+                        )
+                    )
+
+                except SpotifyAuthenticationError:
+                    if attempt == 1:
+                        abort(
+                            401,
+                            message=(
+                                "Spotify reconnection required"
+                            ),
+                        )
+
+                    access_token = (
+                        _refresh_rejected_token(
+                            user_uuid,
+                            access_token,
+                        )
+                    )
+
+        except SpotifyPermissionError:
+            abort(
+                403,
+                message="Spotify permission denied",
+            )
+
+        except SpotifyRateLimitError as exc:
+            retry_after = exc.retry_after
+
+            if (
+                isinstance(retry_after, str)
+                and retry_after.isdecimal()
+            ):
+                retry_after = str(
+                    min(int(retry_after), 86400)
+                )
+            else:
+                retry_after = None
+
+            response = {
+                "error": "Too Many Requests",
+                "message": (
+                    "Spotify rate limit exceeded"
+                ),
+            }
+
+            result = make_response(
+                jsonify(response),
+                429,
+            )
+
+            if retry_after is not None:
+                result.headers[
+                    "Retry-After"
+                ] = retry_after
+
+            return result
+
+        except SpotifyResourceNotFoundError:
+            abort(
+                502,
+                message="Spotify resource unavailable",
+            )
+
+        except SpotifyServiceError:
+            abort(
+                502,
+                message="Spotify service unavailable",
+            )
+
+        except ValueError:
+            abort(
+                502,
+                message="Invalid response from Spotify",
+            )
