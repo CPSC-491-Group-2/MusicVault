@@ -34,7 +34,7 @@ export async function searchSpotifyTracks(
       data: {
         items: [],
         total: 0,
-        limit: 12,
+        limit: 10,
         offset: 0,
         next: null,
         previous: null,
@@ -44,7 +44,7 @@ export async function searchSpotifyTracks(
 
   const params = new URLSearchParams({
     q: trimmedQuery,
-    limit: "12",
+    limit: "10",
   });
 
   const response = await fetch(

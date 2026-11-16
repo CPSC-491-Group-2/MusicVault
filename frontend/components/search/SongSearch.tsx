@@ -1,11 +1,12 @@
 "use client";
 
 import {
-  FormEvent,
   useEffect,
   useState,
 } from "react";
-
+import {
+  FormEvent,
+} from "react";
 import {
   Button,
   FormMessage,
@@ -64,6 +65,8 @@ export function SongSearch() {
     useState(false);
 
   useEffect(() => {
+    console.log("SongSearch hydrated");
+
     async function loadVault() {
       const result = await getVault();
 
@@ -90,6 +93,11 @@ export function SongSearch() {
 
     const trimmedQuery = query.trim();
 
+    console.log(
+      "handleSearch fired:",
+      trimmedQuery,
+    );
+
     if (!trimmedQuery) {
       setTracks([]);
       setHasSearched(false);
@@ -102,7 +110,10 @@ export function SongSearch() {
 
     const result =
       await searchSpotifyTracks(trimmedQuery);
-
+    console.log(
+      "Spotify search result:",
+      result, 
+    );
     setSearching(false);
     setHasSearched(true);
 
