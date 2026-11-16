@@ -162,10 +162,13 @@ export function SongSearch() {
 
   return (
     <section
+       
       id="song-search"
       aria-label="Song search"
       className="grid gap-7"
+     
     >
+    
       <form
         onSubmit={handleSearch}
         className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto]"
