@@ -9,6 +9,7 @@ from app.routes.health import health_bp
 from app.routes.user import user_bp
 from app.routes.spotify import spotify_bp
 from app.routes.account import account_bp
+from app.routes.recommendation import recommendation_bp
 
 
 def create_app():
@@ -39,8 +40,13 @@ def create_app():
     )
 
     api.register_blueprint(
-    spotify_bp,
-    url_prefix="/api/v1",
+        spotify_bp,
+        url_prefix="/api/v1",
+    )
+
+    api.register_blueprint(
+        recommendation_bp,
+        url_prefix="/api/v1",
     )
 
     app.register_blueprint(
