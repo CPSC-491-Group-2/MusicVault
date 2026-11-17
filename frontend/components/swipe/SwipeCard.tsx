@@ -16,10 +16,11 @@ const TILT_PER_PX = 0.06;
 const MAX_TILT = 8;
 const LEAVE_DISTANCE = 520;
 
+// Offsets must beat what origin-top scaling trims, or the peeks hide behind the top card.
 const DEPTH_CLASSES = [
   "z-30 touch-none select-none",
-  "pointer-events-none z-20 origin-top translate-y-3 scale-[0.96] opacity-70",
-  "pointer-events-none z-10 origin-top translate-y-6 scale-[0.92] opacity-45",
+  "pointer-events-none z-20 origin-top translate-y-6 scale-[0.98] opacity-70",
+  "pointer-events-none z-10 origin-top translate-y-12 scale-[0.96] opacity-45",
 ];
 
 function albumInitials(album: string): string {

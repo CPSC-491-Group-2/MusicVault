@@ -29,7 +29,7 @@ const PREFETCH_AT = 3;
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 
 const DECK_CLASSES =
-  "mx-auto grid w-full max-w-[380px] overflow-hidden rounded-[28px] outline-offset-0 transition-[outline-offset] duration-150 ease-mv focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-olive";
+  "mx-auto grid w-full max-w-[380px] overflow-hidden rounded-[28px] pb-7 outline-offset-0 transition-[outline-offset] duration-150 ease-mv focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-olive";
 
 const ANNOUNCE: Record<SwipeAction, string> = {
   keep: "Kept",
