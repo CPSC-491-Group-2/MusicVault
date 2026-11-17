@@ -67,6 +67,8 @@ def upsert_song_from_deezer(db: Session, track: dict) -> uuid.UUID:
         )
     if not title:
         raise ValueError(f"track title is required (got {track.get('title')!r})")
+    if not track.get("artists"):
+        raise ValueError(f"track {deezer_id!r} has no credited artists")
 
     credits: list[tuple[uuid.UUID, str]] = []
     seen: set[uuid.UUID] = set()
@@ -79,7 +81,14 @@ def upsert_song_from_deezer(db: Session, track: dict) -> uuid.UUID:
     isrc = track.get("isrc")
     song_id = db.scalar(select(Song.id).where(Song.deezer_track_id == deezer_id))
     if song_id is None and isrc:
-        song_id = db.scalar(select(Song.id).where(Song.isrc == isrc))
+        # Only adopt a row that has no Deezer identity yet, or two Deezer tracks
+        # sharing an ISRC would take turns stealing each other's row.
+        song_id = db.scalar(
+            select(Song.id)
+            .where(Song.isrc == isrc, Song.deezer_track_id.is_(None))
+            .order_by(Song.created_at)
+            .limit(1)
+        )
 
     values: dict = {
         "title": title,

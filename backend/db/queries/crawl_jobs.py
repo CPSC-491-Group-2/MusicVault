@@ -124,7 +124,7 @@ def fail(db: Session, job_id: uuid.UUID, error: str) -> None:
 
 
 def release(db: Session, job_id: uuid.UUID) -> None:
-    """Hand a claimed job back to the queue without spending an attempt."""
+    """Hand a claimed job back to the queue, keeping the attempt claim() counted."""
     db.execute(
         update(CrawlJob)
         .where(CrawlJob.id == job_id)
