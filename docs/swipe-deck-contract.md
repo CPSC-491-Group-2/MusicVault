@@ -76,6 +76,8 @@ Requires a logged-in user. Returns a page of candidate songs to show in the swip
 
 `song` reuses the field names returned by the rest of the API: `id`, `title`, `artist`, `album`, `album_image_url`, `spotify_url`. `preview_url` is new in this endpoint; see the limitation below before wiring up audio playback.
 
+Only `id`, `title` and `artist` are always present. `album`, `album_image_url`, `spotify_url` and `preview_url` are each nullable and must be rendered defensively: a song reached through the artist graph may have no Spotify match, and a song with no licensed preview has `preview_url: null`. Treat a null `preview_url` as "not playable" rather than hiding the card.
+
 `score` and each value in `components` (`graph`, `similarity`, `discovery`) are floats in `0..1`. `reason.path` lists the artist names describing the graph hop that produced the recommendation, in order, starting from an artist the listener already likes and ending at the recommended song's artist; `reason.text` is a short sentence for display in the UI.
 
 ### `preview_url` is perishable
@@ -111,7 +113,15 @@ Requires a logged-in user. Records a swipe action as a user preference.
 }
 ```
 
-`preference_type` is the stored preference value, one of `liked`, `disliked`, `saved`, `skipped`, `neutral`, as described in [recommendation-data-integrity.md](recommendation-data-integrity.md#preferences).
+`preference_type` is the stored preference value, as described in [recommendation-data-integrity.md](recommendation-data-integrity.md#preferences). Each `action` maps to exactly one of them:
+
+| `action` | stored `preference_type` | Meaning |
+|---|---|---|
+| `keep` | `liked` | The listener kept the song. |
+| `pass` | `disliked` | The listener rejected the song. |
+| `skip` | `skipped` | The listener moved on without judging it. |
+
+`saved` and `neutral` are part of the preference vocabulary but are not produced by this endpoint.
 
 ## Errors
 
