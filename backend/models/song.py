@@ -40,6 +40,13 @@ class Song(Base):
     isrc: Mapped[str | None] = mapped_column(
         String(32), nullable=True, info=classified(DataClass.PUBLIC)
     )
+    deezer_track_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, nullable=True, info=classified(DataClass.PUBLIC)
+    )
+    # Deezer preview links expire; re-fetch rather than cache this for long.
+    preview_url: Mapped[str | None] = mapped_column(
+        Text, nullable=True, info=classified(DataClass.PUBLIC)
+    )
     duration_ms: Mapped[int | None] = mapped_column(
         Integer, nullable=True, info=classified(DataClass.PUBLIC)
     )

@@ -77,6 +77,9 @@ CREATE TABLE songs (
     spotify_track_id VARCHAR(255) UNIQUE,
     isrc VARCHAR(32),
 
+    deezer_track_id VARCHAR(255),
+    preview_url TEXT,
+
     duration_ms INTEGER,
     explicit BOOLEAN,
 
@@ -291,6 +294,11 @@ CREATE TABLE artists (
     name VARCHAR(500) NOT NULL,
 
     spotify_artist_id VARCHAR(255) UNIQUE,
+    mbid VARCHAR(36),
+
+    fans INTEGER,
+    fans_source VARCHAR(100),
+    last_expanded_at TIMESTAMPTZ,
 
     genres JSONB,
     genres_source VARCHAR(100),
@@ -332,7 +340,162 @@ CREATE TABLE song_artists (
 
 
 -- ============================================================
--- 12. INDEXES
+-- 12. ARTIST EXTERNAL IDS
+-- Each provider's own ID for an artist, so crawled records can
+-- be matched back to one canonical artist row.
+-- ============================================================
+
+CREATE TABLE artist_external_ids (
+    artist_id UUID NOT NULL
+        REFERENCES artists(id)
+        ON DELETE CASCADE,
+
+    provider VARCHAR(50) NOT NULL,
+    external_id VARCHAR(255) NOT NULL,
+
+    PRIMARY KEY (artist_id, provider),
+
+    CONSTRAINT uq_artist_external_ids_provider_external
+        UNIQUE (provider, external_id)
+);
+
+
+-- ============================================================
+-- 13. ARTIST EDGES
+-- Directed artist-to-artist similarity, one row per provider.
+-- Edges are stored in the direction the provider reported them.
+-- ============================================================
+
+CREATE TABLE artist_edges (
+    src_artist_id UUID NOT NULL
+        REFERENCES artists(id)
+        ON DELETE CASCADE,
+
+    dst_artist_id UUID NOT NULL
+        REFERENCES artists(id)
+        ON DELETE CASCADE,
+
+    provider VARCHAR(50) NOT NULL,
+    weight DOUBLE PRECISION NOT NULL,
+
+    fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    PRIMARY KEY (src_artist_id, dst_artist_id, provider),
+
+    CONSTRAINT chk_artist_edges_weight_range
+        CHECK (weight >= 0 AND weight <= 1),
+
+    CONSTRAINT chk_artist_edges_no_self
+        CHECK (src_artist_id <> dst_artist_id),
+
+    CONSTRAINT chk_artist_edges_provider
+        CHECK (
+            provider IN (
+                'deezer_related',
+                'lastfm_similar',
+                'mb_relation',
+                'co_credit'
+            )
+        )
+);
+
+
+-- ============================================================
+-- 14. ARTIST TAGS
+-- Provider-supplied tags for an artist, with that provider's
+-- own weight. Separate from artists.genres, which is Spotify's.
+-- ============================================================
+
+CREATE TABLE artist_tags (
+    artist_id UUID NOT NULL
+        REFERENCES artists(id)
+        ON DELETE CASCADE,
+
+    tag VARCHAR(100) NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+
+    weight DOUBLE PRECISION,
+
+    PRIMARY KEY (artist_id, tag, provider)
+);
+
+
+-- ============================================================
+-- 15. CRAWL JOBS
+-- The crawler's work queue. Jobs are claimed per lane, highest
+-- priority first, and only once run_after has passed.
+-- ============================================================
+
+CREATE TABLE crawl_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    kind VARCHAR(50) NOT NULL,
+    lane VARCHAR(50) NOT NULL,
+    target VARCHAR(255) NOT NULL,
+
+    payload JSONB,
+
+    priority INTEGER NOT NULL DEFAULT 50,
+    status VARCHAR(20) NOT NULL DEFAULT 'queued',
+    attempts INTEGER NOT NULL DEFAULT 0,
+
+    run_after TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_error TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_crawl_jobs_kind_target
+        UNIQUE (kind, target),
+
+    CONSTRAINT chk_crawl_jobs_status
+        CHECK (
+            status IN (
+                'queued',
+                'running',
+                'done',
+                'failed'
+            )
+        )
+);
+
+
+-- ============================================================
+-- 16. SWIPE EVENTS
+-- A user's keep/pass/skip decisions in the swipe deck. This is
+-- an append-only log, unlike user_preferences' current state.
+-- ============================================================
+
+CREATE TABLE swipe_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    user_id UUID NOT NULL
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    song_id UUID NOT NULL
+        REFERENCES songs(id)
+        ON DELETE CASCADE,
+
+    action VARCHAR(20) NOT NULL,
+    deck_position INTEGER,
+    algorithm_version VARCHAR(100),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT chk_swipe_events_action
+        CHECK (
+            action IN (
+                'keep',
+                'pass',
+                'skip'
+            )
+        )
+);
+
+
+-- ============================================================
+-- 17. INDEXES
 -- Additional indexes for common lookup and join patterns.
 -- ============================================================
 
@@ -416,8 +579,40 @@ CREATE INDEX idx_song_artists_artist_id
     ON song_artists(artist_id);
 
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_artists_mbid
+    ON artists(mbid);
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_songs_deezer_track_id
+    ON songs(deezer_track_id);
+
+
+CREATE INDEX IF NOT EXISTS idx_artist_edges_src_artist_id
+    ON artist_edges(src_artist_id);
+
+
+CREATE INDEX IF NOT EXISTS idx_artist_edges_dst_artist_id
+    ON artist_edges(dst_artist_id);
+
+
+CREATE INDEX IF NOT EXISTS idx_artist_external_ids_artist_id
+    ON artist_external_ids(artist_id);
+
+
+CREATE INDEX IF NOT EXISTS idx_crawl_jobs_claim
+    ON crawl_jobs(lane, status, priority DESC, run_after);
+
+
+CREATE INDEX IF NOT EXISTS idx_swipe_events_user_id
+    ON swipe_events(user_id);
+
+
+CREATE INDEX IF NOT EXISTS idx_swipe_events_song_id
+    ON swipe_events(song_id);
+
+
 -- ============================================================
--- 13. SCHEMA RELATIONSHIP SUMMARY
+-- 18. SCHEMA RELATIONSHIP SUMMARY
 -- ============================================================
 
 /*
@@ -481,11 +676,49 @@ CREATE INDEX idx_song_artists_artist_id
       | many : 1
       v
     artists
+
+
+    artists
+      |
+      | 1 : many
+      v
+    artist_external_ids
+
+
+    artists
+      |
+      | 1 : many
+      v
+    artist_tags
+
+
+    artists                      artists
+      | (src)                      | (dst)
+      | 1 : many                   | 1 : many
+      v                            v
+    artist_edges  -----------------+
+
+
+    users
+      |
+      | 1 : many
+      v
+    swipe_events
+      |
+      | many : 1
+      v
+    songs
+
+
+    crawl_jobs
+      (standalone work queue; target is a provider ID string,
+       not a foreign key, so jobs can be queued before the
+       artist or song row exists)
 */
 
 
 -- ============================================================
--- 14. IMPORTANT DESIGN NOTES
+-- 19. IMPORTANT DESIGN NOTES
 -- ============================================================
 
 /*
@@ -528,4 +761,29 @@ CREATE INDEX idx_song_artists_artist_id
 11. songs.isrc is not unique.
     The same recording can be released under several Spotify track
     IDs. It is kept for looking songs up in other music databases.
+
+12. songs.preview_url is perishable.
+    Deezer preview links are signed and expire, so a stored value
+    can stop playing at any time. Treat it as a short-lived cache
+    to refresh on use, never as stable catalog data, and never as
+    a permalink shown to users.
+
+13. artist_edges is directed, not symmetric.
+    A row means the provider listed dst as similar to src, which
+    does not imply the reverse. Store each direction the provider
+    actually reported and query both columns when similarity is
+    wanted in either direction; that is why both src and dst have
+    their own index.
+
+14. crawl_jobs.target is not a foreign key.
+    It holds a provider's own identifier, so work can be queued
+    for an artist or song MusicVault has not stored yet. The
+    unique (kind, target) pair is what keeps the queue from
+    holding the same job twice.
+
+15. swipe_events is an append-only log.
+    user_preferences holds the user's current sentiment for a
+    song; swipe_events records each individual decision, so the
+    ranking code can be evaluated against what users actually did
+    at a given algorithm_version.
 */

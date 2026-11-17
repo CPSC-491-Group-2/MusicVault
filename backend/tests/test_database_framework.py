@@ -26,6 +26,11 @@ SCHEMA_TABLES = {
     "user_top_songs",
     "artists",
     "song_artists",
+    "artist_external_ids",
+    "artist_edges",
+    "artist_tags",
+    "crawl_jobs",
+    "swipe_events",
 }
 
 
