@@ -108,6 +108,6 @@ class CurrentUserResource(MethodView):
                     message="MusicVault database temporarily unavailable",
                 )
 
-        current_app.logger.info("Deleted account %s", user.id)
+        current_app.logger.warning("Deleted account %s", user.id)
         logout_user()
         return "", 204
