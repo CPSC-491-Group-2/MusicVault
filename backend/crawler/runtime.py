@@ -6,6 +6,8 @@ import signal
 import threading
 import time
 
+from sqlalchemy import inspect
+
 from db.queries import crawl_jobs
 from db.session import SessionLocal
 
@@ -57,11 +59,15 @@ def _hand_back(db, job_id, record, *args) -> None:
     the requeue. A failure to record is logged, never raised, so it cannot mask
     the error that brought us here.
     """
-    db.rollback()
     try:
+        db.rollback()
         record(db, job_id, *args)
     except Exception:
         log.exception("could not record outcome for job id=%s", job_id)
+        try:
+            db.rollback()
+        except Exception:
+            log.exception("session unusable, lane will stop on job id=%s", job_id)
 
 
 def run_lane(lane: str, *, drain: bool, max_artists: int) -> None:
@@ -77,9 +83,10 @@ def run_lane(lane: str, *, drain: bool, max_artists: int) -> None:
                 time.sleep(EMPTY_LANE_SLEEP)
                 continue
 
-            job_id = job.id
+            # claim() commits, which expires every attribute. Reading the identity
+            # map issues no SQL, so this cannot fail before _hand_back can run.
+            job_id = inspect(job).identity[0]
             try:
-                # claim() commits, so these attributes expire and re-query here.
                 kind, target, payload = job.kind, job.target, job.payload
                 log.info(
                     "claimed job id=%s target=%s pid=%s", job_id, target, os.getpid()

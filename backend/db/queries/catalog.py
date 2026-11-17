@@ -81,13 +81,16 @@ def upsert_song_from_deezer(db: Session, track: dict) -> uuid.UUID:
     isrc = track.get("isrc")
     song_id = db.scalar(select(Song.id).where(Song.deezer_track_id == deezer_id))
     if song_id is None and isrc:
-        # Only adopt a row that has no Deezer identity yet, or two Deezer tracks
-        # sharing an ISRC would take turns stealing each other's row.
+        # Only adopt a row with no Deezer identity yet, or two Deezer tracks sharing
+        # an ISRC would take turns stealing each other's row. The lock makes Postgres
+        # re-check that predicate once a competing adopter commits, so the loser
+        # finds nothing and inserts its own row instead of overwriting.
         song_id = db.scalar(
             select(Song.id)
             .where(Song.isrc == isrc, Song.deezer_track_id.is_(None))
             .order_by(Song.created_at)
             .limit(1)
+            .with_for_update()
         )
 
     values: dict = {
