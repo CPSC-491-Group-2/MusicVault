@@ -45,5 +45,11 @@ class PasswordChangeSchema(Schema):
     )
 
 
+class DeleteAccountSchema(Schema):
+    # The route enforces the phrase, and the password when the account has one.
+    password = fields.String(load_only=True, load_default=None)
+    confirm = fields.String(load_default=None)
+
+
 class EmailSchema(Schema):
     email = fields.Email(required=True, validate=validate.Length(max=320))
