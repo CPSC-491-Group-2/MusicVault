@@ -243,6 +243,7 @@ This includes a missing, unsigned, or tampered cookie, and a session for a user 
 |---|---|
 | `GET /api/v1/me` | Returns the logged-in user. |
 | `PUT /api/v1/me/password` | Sets or changes the password. Signs out the user's other sessions. |
+| `DELETE /api/v1/me` | Deletes the account and everything tied to it. Needs the password if one is set, plus the phrase `delete my account`. Signs the user out. |
 | `DELETE /api/v1/me/spotify` | Disconnects Spotify. Requires a password first, so the account stays reachable. |
 | `GET /api/v1/users/{id}` | Returns the user only if `{id}` is the logged-in user. Any other ID gets `403 Forbidden`, including IDs that don't exist, so the route can't be used to discover accounts. |
 
