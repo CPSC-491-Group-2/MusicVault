@@ -19,6 +19,7 @@ export type PasswordPanelValues = {
 type PasswordPanelProps = {
   user: User;
   error?: AuthErrorCode;
+  fieldErrors?: Partial<Record<keyof PasswordPanelValues, string>>;
   pending?: boolean;
   saved?: boolean;
   onSubmit?: (values: PasswordPanelValues) => void;
@@ -34,12 +35,14 @@ type FieldErrors = {
 export function PasswordPanel({
   user,
   error,
+  fieldErrors: serverFieldErrors,
   pending = false,
   saved = false,
   onSubmit,
   className,
 }: PasswordPanelProps) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitCount, setSubmitCount] = useState(0);
   const hasPassword = user.has_password;
   const needsEmail = !hasPassword && user.email === null;
   const submitLabel = hasPassword ? "Change password" : "Add password";
@@ -79,7 +82,10 @@ export function PasswordPanel({
       nextErrors.new_password = "Use 128 characters or fewer";
     }
 
-    flushSync(() => setFieldErrors(nextErrors));
+    flushSync(() => {
+      setFieldErrors(nextErrors);
+      setSubmitCount((count) => count + 1);
+    });
 
     if (
       nextErrors.current_password ||
@@ -124,7 +130,11 @@ export function PasswordPanel({
             autoComplete="current-password"
             required
             disabled={pending}
-            error={fieldErrors.current_password}
+            error={
+              fieldErrors.current_password ??
+              serverFieldErrors?.current_password
+            }
+            errorKey={submitCount}
           />
         ) : null}
         {needsEmail ? (
@@ -135,7 +145,8 @@ export function PasswordPanel({
             autoComplete="email"
             required
             disabled={pending}
-            error={fieldErrors.email}
+            error={fieldErrors.email ?? serverFieldErrors?.email}
+            errorKey={submitCount}
           />
         ) : null}
         <TextField
@@ -146,17 +157,18 @@ export function PasswordPanel({
           hint="8 to 128 characters"
           required
           disabled={pending}
-          error={fieldErrors.new_password}
+          error={fieldErrors.new_password ?? serverFieldErrors?.new_password}
+          errorKey={submitCount}
         />
         <Button
           type="submit"
           variant="primary"
           size="md"
-          disabled={pending}
-          aria-busy={pending || undefined}
+          loading={pending}
+          loadingLabel="Saving"
           className="self-start"
         >
-          {pending ? "Saving" : submitLabel}
+          {submitLabel}
         </Button>
       </form>
     </Surface>
