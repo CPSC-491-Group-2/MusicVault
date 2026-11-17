@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,6 +30,12 @@ class User(Base):
     )
     password_hash: Mapped[str | None] = mapped_column(
         Text, nullable=True, info=classified(DataClass.RESTRICTED)
+    )
+    auth_version: Mapped[int] = mapped_column(
+        Integer,
+        server_default="1",
+        nullable=False,
+        info=classified(DataClass.INTERNAL),
     )
     display_name: Mapped[str | None] = mapped_column(
         String(255), nullable=True, info=classified(DataClass.CONFIDENTIAL)

@@ -26,10 +26,12 @@ def two_test_users(auth_app, make_db_user):
     # Simulate authenticated User A.
     with client_a.session_transaction() as session:
         session["user_id"] = str(user_a)
+        session["auth_version"] = 1
 
     # Simulate authenticated User B.
     with client_b.session_transaction() as session:
         session["user_id"] = str(user_b)
+        session["auth_version"] = 1
 
     return user_a, user_b, client_a, client_b
 

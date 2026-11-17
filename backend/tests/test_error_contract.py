@@ -18,15 +18,19 @@ def assert_controlled_error_response(
     expected_status,
     expected_error,
     expected_message,
+    expected_code=None,
 ):
     body = response.get_json()
-
-    assert response.status_code == expected_status
-    assert response.is_json
-    assert body == {
+    expected_body = {
         "error": expected_error,
         "message": expected_message,
     }
+    if expected_code is not None:
+        expected_body["code"] = expected_code
+
+    assert response.status_code == expected_status
+    assert response.is_json
+    assert body == expected_body
 
     response_text = response.get_data(as_text=True).lower()
 
@@ -53,6 +57,23 @@ def test_method_not_allowed_returns_json_405(client):
         405,
         "Method Not Allowed",
         "The requested method is not allowed for this resource.",
+        "method_not_allowed",
+    )
+
+
+def test_malformed_json_returns_json_400(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        data="{",
+        content_type="application/json",
+    )
+
+    assert_controlled_error_response(
+        response,
+        400,
+        "Bad Request",
+        "The request is malformed.",
+        "bad_request",
     )
 
 

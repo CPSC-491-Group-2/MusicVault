@@ -206,6 +206,7 @@ Spotify apps start in Development Mode, where only users added under **User Mana
 |---|---|
 | `GET /api/auth/spotify/login` | Redirects the user to Spotify to approve access. |
 | `GET /api/auth/spotify/callback` | Spotify redirects back here. The backend finishes login and redirects to `FRONTEND_URL`. |
+| `GET /api/auth/spotify/connect` | Links Spotify to the logged-in user's account, then redirects to `FRONTEND_URL/profile`. Logged-out users are sent to `FRONTEND_URL/login`. |
 | `POST /api/auth/spotify/logout` | Ends the session. Returns `204 No Content`. |
 
 - **State/CSRF protection:** `/login` generates a random `state` value and stores it in a signed, HttpOnly session cookie. `/callback` only continues if Spotify returns the same value. Each `state` can be used once.
@@ -220,6 +221,9 @@ If login fails, the user is sent back to the frontend with an `auth_error` query
 | `access_denied` | The user declined on Spotify's consent screen. |
 | `invalid_state` | The `state` was missing, wrong, or already used. Starting login again fixes it. |
 | `spotify_error` | Spotify returned an error or could not be reached. |
+| `spotify_not_allowed` | Spotify refused the profile request, usually because the app is in Development Mode and the user isn't under **User Management**. |
+
+Connecting from the profile page reports the same codes as `/profile?error=<code>`, plus `spotify_in_use` (that Spotify account belongs to another MusicVault user) and `already_connected`. Success lands on `/profile?spotify=connected`.
 
 ### Protected routes
 
@@ -228,15 +232,18 @@ Routes that need a logged-in user use the `login_required` decorator from `app/a
 ```json
 {
   "error": "Unauthorized",
-  "message": "You must be logged in to access this resource."
+  "message": "You must be logged in to access this resource.",
+  "code": "unauthorized"
 }
 ```
 
-This includes a missing, unsigned, or tampered cookie, and a session for a user that has since been deleted.
+This includes a missing, unsigned, or tampered cookie, and a session for a user that has since been deleted. A session issued before the user's password last changed gets the same status with `"code": "session_revoked"`.
 
 | Endpoint | Description |
 |---|---|
 | `GET /api/v1/me` | Returns the logged-in user. |
+| `PUT /api/v1/me/password` | Sets or changes the password. Signs out the user's other sessions. |
+| `DELETE /api/v1/me/spotify` | Disconnects Spotify. Requires a password first, so the account stays reachable. |
 | `GET /api/v1/users/{id}` | Returns the user only if `{id}` is the logged-in user. Any other ID gets `403 Forbidden`, including IDs that don't exist, so the route can't be used to discover accounts. |
 
 On a flask-smorest `MethodView`, protect every method with `decorators = [login_required]`.
@@ -278,6 +285,27 @@ The backend runs at:
 ```text
 http://127.0.0.1:5000
 ```
+
+## Database Migrations
+
+Schema changes ship as numbered, idempotent SQL files in `backend/DDL/migrations/`, each wrapped in its own `BEGIN`/`COMMIT`. The same change also goes into `backend/DDL/initial_schema.sql`, so fresh installs and tests still get the latest schema.
+
+`scripts/migrate.py` applies pending files in filename order and records each one in a `schema_migrations` table, so re-running it only applies new files. It reads `DATABASE_URL` from the shell or the repo-root `.env`.
+
+Run it locally:
+
+```bash
+cd backend
+python scripts/migrate.py
+```
+
+See what's pending without applying anything:
+
+```bash
+python scripts/migrate.py --dry-run
+```
+
+The Deploy workflow runs it before starting the new containers, and stops the deploy if a migration fails.
 
 ## Running the Frontend
 
@@ -350,6 +378,8 @@ API errors use a consistent JSON structure:
   "message": "The requested resource was not found."
 }
 ```
+
+Account and auth errors, a malformed request body and a wrong HTTP method also include a machine-readable `code`, such as `invalid_credentials`, `bad_request` or `method_not_allowed`.
 
 ## OpenAPI Documentation
 
