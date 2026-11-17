@@ -148,7 +148,6 @@ export function SwipeDeck({ seed, simulateFailure }: SwipeDeckProps) {
     }
 
     prefetching.current = true;
-    let cancelled = false;
 
     async function loadMore() {
       const result = await getDeck({
@@ -158,8 +157,8 @@ export function SwipeDeck({ seed, simulateFailure }: SwipeDeckProps) {
       });
       prefetching.current = false;
 
-      // A failed prefetch leaves the cards already in hand alone.
-      if (cancelled || !result.ok) {
+      // No cleanup cancel: every swipe re-runs this effect and would drop the refill.
+      if (!result.ok) {
         return;
       }
 
@@ -187,9 +186,6 @@ export function SwipeDeck({ seed, simulateFailure }: SwipeDeckProps) {
     }
 
     void loadMore();
-    return () => {
-      cancelled = true;
-    };
   }, [status, drained, items.length, shownIds, seed]);
 
   function stopAudio() {
