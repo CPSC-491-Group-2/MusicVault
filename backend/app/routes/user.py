@@ -15,6 +15,35 @@ user_bp = Blueprint(
 )
 
 
+def current_user_payload(user) -> dict:
+    # Query Spotify information in an active database session.
+    with SessionLocal() as db:
+        spotify_account = db.scalar(
+            select(SpotifyAccount).where(
+                SpotifyAccount.user_id == user.id
+            )
+        )
+
+        spotify_info = {
+            "connected": spotify_account is not None,
+            "display_name": (
+                spotify_account.display_name
+                if spotify_account is not None
+                else None
+            ),
+        }
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "display_name": user.display_name,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+        "has_password": bool(user.password_hash),
+        "spotify": spotify_info,
+    }
+
+
 @user_bp.route("/users/<uuid:user_id>")
 class UserResource(MethodView):
     decorators = [login_required]
@@ -38,31 +67,4 @@ class CurrentUserResource(MethodView):
     @user_bp.response(200, CurrentUserResponseSchema)
     @user_bp.alt_response(401, description="Not logged in")
     def get(self):
-        user = g.current_user
-
-        # Query Spotify information in an active database session.
-        with SessionLocal() as db:
-            spotify_account = db.scalar(
-                select(SpotifyAccount).where(
-                    SpotifyAccount.user_id == user.id
-                )
-            )
-
-            spotify_info = {
-                "connected": spotify_account is not None,
-                "display_name": (
-                    spotify_account.display_name
-                    if spotify_account is not None
-                    else None
-                ),
-            }
-
-        return {
-            "id": user.id,
-            "email": user.email,
-            "display_name": user.display_name,
-            "created_at": user.created_at,
-            "updated_at": user.updated_at,
-            "has_password": bool(user.password_hash),
-            "spotify": spotify_info,
-        }
+        return current_user_payload(g.current_user)

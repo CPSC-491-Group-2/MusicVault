@@ -72,6 +72,7 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           docker compose pull
+          docker compose run --rm --no-deps backend python scripts/migrate.py
           # --wait blocks until healthchecks pass or fails the step.
           docker compose up -d --no-build --wait --wait-timeout 120
           docker image prune -f
