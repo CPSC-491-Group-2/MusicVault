@@ -39,3 +39,58 @@ export interface Song {
   title: string;
   artist: string;
 }
+
+export interface SpotifyArtist {
+  spotify_id: string;
+  name: string;
+}
+
+export interface SpotifyAlbum {
+  spotify_id: string | null;
+  name: string | null;
+  image_url: string | null;
+}
+
+export interface SpotifyTrack {
+  spotify_id: string;
+  title: string;
+  artists: SpotifyArtist[];
+  album: SpotifyAlbum;
+  duration_ms: number | null;
+  popularity: number | null;
+  explicit: boolean;
+  spotify_url: string | null;
+  isrc: string | null;
+}
+
+export interface SpotifySearchResponse {
+  items: SpotifyTrack[];
+  total: number;
+  limit: number;
+  offset: number;
+  next: string | null;
+  previous: string | null;
+}
+
+export interface RecommendationItem {
+  id: string;
+  title: string;
+  artist: string;
+  album: string | null;
+
+  spotify_track_id: string | null;
+  spotify_url: string | null;
+  album_image_url: string | null;
+
+  popularity: number | null;
+
+  score: number;
+  reason: string | null;
+
+  components: Record<string, number | null>;
+}
+
+export interface RecommendationResponse {
+  items: RecommendationItem[];
+  total: number;
+}

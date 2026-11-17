@@ -64,3 +64,29 @@ class SpotifyTopTracksResponseSchema(Schema):
     offset = fields.Integer(required=True)
     next = fields.Url(allow_none=True)
     previous = fields.Url(allow_none=True)
+
+class SpotifySearchQuerySchema(Schema):
+    """Validate parameters for Spotify track search."""
+
+    q = fields.String(
+        required=True,
+        validate=validate.Length(min=1),
+        metadata={"description": "Song, artist, album, or search terms"},
+    )
+
+    limit = fields.Integer(
+        load_default=10,
+        validate=validate.Range(min=1, max=10),
+        metadata={"description": "Number of search results"},
+    )
+
+    offset = fields.Integer(
+        load_default=0,
+        validate=validate.Range(min=0, max=1000),
+        metadata={"description": "Pagination offset"},
+    )
+
+class SpotifySearchResponseSchema(
+    SpotifyTopTracksResponseSchema
+):
+    """Normalized Spotify track-search response."""
