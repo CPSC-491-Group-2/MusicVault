@@ -31,6 +31,7 @@ def test_recommendations_requires_login(auth_client):
     assert response.get_json() == {
         "error": "Unauthorized",
         "message": "You must be logged in to access this resource.",
+        "code": "unauthorized",
     }
 
 
