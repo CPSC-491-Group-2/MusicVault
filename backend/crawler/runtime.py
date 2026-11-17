@@ -48,6 +48,22 @@ def configure_logging() -> None:
     )
 
 
+def _hand_back(db, job_id, record, *args) -> None:
+    """Drop the handler's half-finished work, then record the job's new state.
+
+    Without the rollback a failed statement would poison the session, so
+    recording the outcome would fail too and leave the job stuck in `running`.
+    An interrupt mid-handler would otherwise commit a partial write alongside
+    the requeue. A failure to record is logged, never raised, so it cannot mask
+    the error that brought us here.
+    """
+    db.rollback()
+    try:
+        record(db, job_id, *args)
+    except Exception:
+        log.exception("could not record outcome for job id=%s", job_id)
+
+
 def run_lane(lane: str, *, drain: bool, max_artists: int) -> None:
     """Claim and run jobs in one lane until it empties (drain) or we are stopped."""
     db = SessionLocal()
@@ -61,21 +77,23 @@ def run_lane(lane: str, *, drain: bool, max_artists: int) -> None:
                 time.sleep(EMPTY_LANE_SLEEP)
                 continue
 
-            # claim() commits, so these attributes expire and would re-query later.
-            job_id, kind, target, payload = job.id, job.kind, job.target, job.payload
-            log.info("claimed job id=%s target=%s pid=%s", job_id, target, os.getpid())
+            job_id = job.id
             try:
+                # claim() commits, so these attributes expire and re-query here.
+                kind, target, payload = job.kind, job.target, job.payload
+                log.info(
+                    "claimed job id=%s target=%s pid=%s", job_id, target, os.getpid()
+                )
                 handler = HANDLERS.get(kind)
                 if handler is None:
                     raise ValueError(f"unknown job kind {kind!r}")
                 handler(db, client, target, payload, max_artists=max_artists)
+                crawl_jobs.complete(db, job_id)
             except Exception as exc:  # one bad job must not stop the lane
                 log.exception("job id=%s failed", job_id)
-                crawl_jobs.fail(db, job_id, str(exc))
+                _hand_back(db, job_id, crawl_jobs.fail, str(exc))
             except BaseException:
-                crawl_jobs.release(db, job_id)
+                _hand_back(db, job_id, crawl_jobs.release)
                 raise
-            else:
-                crawl_jobs.complete(db, job_id)
     finally:
         db.close()

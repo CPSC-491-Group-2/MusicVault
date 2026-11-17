@@ -94,7 +94,7 @@ def _error_for(error: dict, path: str) -> DeezerError:
 
 def _artist(item: dict) -> dict:
     return {
-        "deezer_id": str(item.get("id")),
+        "deezer_id": _identifier(item, "artist"),
         "name": item.get("name"),
         "fans": item.get("nb_fan"),
         "picture_url": item.get("picture_xl") or item.get("picture_big") or None,
@@ -102,11 +102,18 @@ def _artist(item: dict) -> dict:
     }
 
 
+def _identifier(item: dict, kind: str) -> str:
+    value = item.get("id")
+    if value is None:
+        raise DeezerDataError(f"{kind} payload has no id: {sorted(item)}")
+    return str(value)
+
+
 def _track(item: dict) -> dict:
     album = item.get("album") or {}
     duration = item.get("duration")
     return {
-        "deezer_id": str(item.get("id")),
+        "deezer_id": _identifier(item, "track"),
         "title": item.get("title"),
         "isrc": item.get("isrc") or None,
         "duration_ms": duration * 1000 if duration is not None else None,
@@ -125,5 +132,6 @@ def _credits(item: dict) -> list[dict]:
         single = item.get("artist")
         contributors = [single] if single else []
     return [
-        {"deezer_id": str(c.get("id")), "name": c.get("name")} for c in contributors
+        {"deezer_id": _identifier(c, "artist"), "name": c.get("name")}
+        for c in contributors
     ]

@@ -36,6 +36,7 @@ def main() -> None:
     if args.command == "seed":
         if not args.chart and not args.artist:
             parser.error("pass --chart, --artist <deezer id>, or both")
+        install_signal_handlers()
         run_seed(args)
     elif args.command == "lanes":
         install_signal_handlers()
@@ -81,6 +82,14 @@ def run_seed(args: argparse.Namespace) -> None:
         log.info(
             "catalog %s", " ".join(f"{name}={value}" for name, value in counts.items())
         )
+        # Drain stops when nothing is due, so a backed-off retry can outlive it.
+        unfinished = [
+            f"{status}={count}"
+            for lane, status, count in crawl_jobs.status_counts(db)
+            if lane == LANE_DEEZER and status != "done"
+        ]
+        if unfinished:
+            log.warning("lane not drained dry: %s", " ".join(unfinished))
     finally:
         db.close()
 
