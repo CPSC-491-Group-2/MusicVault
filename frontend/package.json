@@ -15,7 +15,7 @@
     "test:codegen": "playwright codegen http://localhost:3100"
   },
   "dependencies": {
-    "next": "16.4.1",
+    "next": "16.4.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-force-graph-2d": "^1.29.2"
