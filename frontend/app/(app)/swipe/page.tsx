@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 
+import { SwipeDeck } from "@/components/swipe/SwipeDeck";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 export const metadata: Metadata = {
   title: "Swipe · MusicVault",
 };
 
-export default function SwipePage() {
+export default async function SwipePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ seed?: string; mockFail?: string }>;
+}) {
+  const { seed, mockFail } = await searchParams;
+
   return (
     <>
       <PageHeader
@@ -15,7 +22,7 @@ export default function SwipePage() {
       />
 
       <section aria-label="Swipe deck" className="grid gap-6">
-        {/* content goes here. owned by the dashboard team, see docs/design-spec.md */}
+        <SwipeDeck seed={seed ?? null} simulateFailure={mockFail === "1"} />
       </section>
     </>
   );

@@ -11,6 +11,20 @@ const nextConfig: NextConfig = {
         pathname: "/image/**",
         search: "",
       },
+      {
+        protocol: "https",
+        hostname: "cdn-images.dzcdn.net",
+        port: "",
+        pathname: "/**",
+        search: "",
+      },
+      {
+        protocol: "https",
+        hostname: "e-cdns-images.dzcdn.net",
+        port: "",
+        pathname: "/**",
+        search: "",
+      },
     ],
   },
   // Proxies API calls to Flask; resolved at build time.
