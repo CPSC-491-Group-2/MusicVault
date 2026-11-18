@@ -24,6 +24,8 @@ songs,artist_name,public,Catalog metadata,Published track metadata from Spotify
 songs,album_name,public,Catalog metadata,Published track metadata from Spotify
 songs,spotify_track_id,public,Catalog metadata,Public Spotify catalog ID
 songs,isrc,public,Catalog metadata,Public industry recording code
+songs,deezer_track_id,public,Catalog metadata,Public Deezer catalog ID
+songs,preview_url,public,Catalog metadata,Public Deezer preview link; expires on its own
 songs,duration_ms,public,Catalog metadata,Published track metadata from Spotify
 songs,explicit,public,Catalog metadata,Published track metadata from Spotify
 songs,popularity,public,Catalog metadata,Third-party published metric
@@ -68,6 +70,10 @@ user_top_songs,fetched_at,internal,System metadata,When the listening history wa
 artists,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
 artists,name,public,Catalog metadata,Published artist metadata
 artists,spotify_artist_id,public,Catalog metadata,Public Spotify catalog ID
+artists,mbid,public,Catalog metadata,Public MusicBrainz artist ID
+artists,fans,public,Catalog metadata,Third-party published follower count
+artists,fans_source,internal,System metadata,Which provider supplied the value
+artists,last_expanded_at,internal,System metadata,When the crawler last pulled this artist's neighbours
 artists,genres,public,Catalog metadata,Published artist genres
 artists,genres_source,internal,System metadata,Which provider supplied the value
 artists,genres_fetched_at,internal,System metadata,When the genre lookup ran
@@ -76,3 +82,34 @@ artists,updated_at,internal,System metadata,Row audit timestamp
 song_artists,song_id,internal,System metadata,Foreign key to a public song
 song_artists,artist_id,internal,System metadata,Foreign key to a public artist
 song_artists,position,public,Catalog metadata,Published credit order
+artist_external_ids,artist_id,internal,System metadata,Foreign key to a public artist
+artist_external_ids,provider,internal,System metadata,Which provider the ID came from
+artist_external_ids,external_id,public,Catalog metadata,Public catalog ID at that provider
+artist_edges,src_artist_id,internal,System metadata,Foreign key to a public artist
+artist_edges,dst_artist_id,internal,System metadata,Foreign key to a public artist
+artist_edges,provider,internal,System metadata,Which provider reported the edge
+artist_edges,weight,internal,Derived catalog signal,Similarity strength used by MusicVault's own ranking
+artist_edges,fetched_at,internal,System metadata,When the edge was last crawled
+artist_tags,artist_id,internal,System metadata,Foreign key to a public artist
+artist_tags,tag,public,Catalog metadata,Published artist tag
+artist_tags,provider,internal,System metadata,Which provider supplied the tag
+artist_tags,weight,internal,Derived catalog signal,Tag strength used by MusicVault's own ranking
+crawl_jobs,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+crawl_jobs,kind,internal,System metadata,Which crawler step the job runs
+crawl_jobs,lane,internal,System metadata,Which rate-limited provider lane the job claims
+crawl_jobs,target,internal,System metadata,Provider ID the job works on
+crawl_jobs,payload,internal,System metadata,Extra arguments for the crawler step
+crawl_jobs,priority,internal,System metadata,Claim order within a lane
+crawl_jobs,status,internal,System metadata,Queue state of the job
+crawl_jobs,attempts,internal,System metadata,Retry counter
+crawl_jobs,run_after,internal,System metadata,Earliest time the job may be claimed
+crawl_jobs,last_error,internal,System metadata,Why the last attempt failed
+crawl_jobs,created_at,internal,System metadata,Row audit timestamp
+crawl_jobs,updated_at,internal,System metadata,Row audit timestamp
+swipe_events,id,internal,System metadata,Surrogate key with no meaning outside MusicVault
+swipe_events,user_id,confidential,User identifier,Foreign key to users.id
+swipe_events,song_id,confidential,User activity,Identifies a song the person was shown
+swipe_events,action,confidential,User activity,The person's keep/pass/skip decision
+swipe_events,deck_position,confidential,User activity,Where in the person's deck the decision happened
+swipe_events,algorithm_version,internal,System metadata,Version of the ranking code that built the deck
+swipe_events,created_at,internal,System metadata,Row audit timestamp

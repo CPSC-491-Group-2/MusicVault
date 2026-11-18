@@ -51,6 +51,22 @@ services:
       retries: 5
       start_period: 10s
 
+  crawler-net:
+    image: ghcr.io/cpsc-491-group-2/musicvault-backend:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    command: python -m crawler lanes
+    # Deezer rate limits per IP, so run exactly one of these.
+    # SIGTERM lets the job in flight finish; the default 10s can cut it short.
+    stop_grace_period: 30s
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://localhost:5432/musicvault}
+      DEEZER_RPS: ${DEEZER_RPS:-4}
+    networks:
+      - musicvault
+
 networks:
   # Fixed name so other stacks (db, reverse proxy) can join it.
   musicvault:
