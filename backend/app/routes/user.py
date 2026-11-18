@@ -1,12 +1,18 @@
-from flask import g
+from flask import current_app, g
 from flask.views import MethodView
-from flask_smorest import Blueprint
+from flask_smorest import Blueprint, abort
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.auth import forbidden, login_required
+from app.auth import error_response, forbidden, login_required, logout_user
+from app.schemas.auth import DeleteAccountSchema
 from app.schemas.user import CurrentUserResponseSchema, UserResponseSchema
+from app.security.passwords import verify_password
+from db.queries.user import delete_user
 from db.session import SessionLocal
 from models.spotify_account import SpotifyAccount
+
+DELETE_CONFIRM_PHRASE = "delete my account"
 
 user_bp = Blueprint(
     "users",
@@ -68,3 +74,40 @@ class CurrentUserResource(MethodView):
     @user_bp.alt_response(401, description="Not logged in")
     def get(self):
         return current_user_payload(g.current_user)
+
+    @user_bp.arguments(DeleteAccountSchema)
+    @user_bp.response(204)
+    @user_bp.alt_response(401, description="Not logged in")
+    @user_bp.alt_response(403, description="Current password is incorrect")
+    @user_bp.alt_response(422, description="Confirmation phrase missing or wrong")
+    def delete(self, data):
+        user = g.current_user
+
+        confirm = (data["confirm"] or "").strip().lower()
+        if confirm != DELETE_CONFIRM_PHRASE:
+            abort(
+                422,
+                errors={"json": {"confirm": ['Type "delete my account" to confirm.']}},
+            )
+
+        if user.password_hash:
+            password = data["password"]
+            if not password or not verify_password(user.password_hash, password):
+                return error_response(
+                    403, "current_password_wrong", "The current password is incorrect."
+                )
+
+        with SessionLocal() as db:
+            try:
+                delete_user(db, user.id)
+            except SQLAlchemyError:
+                db.rollback()
+                current_app.logger.exception("Failed to delete account")
+                abort(
+                    503,
+                    message="MusicVault database temporarily unavailable",
+                )
+
+        current_app.logger.warning("Deleted account %s", user.id)
+        logout_user()
+        return "", 204

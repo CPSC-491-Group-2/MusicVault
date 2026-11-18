@@ -15,6 +15,12 @@ const REGISTER_URL = "/api/v1/auth/register";
 const LOGOUT_URL = "/api/v1/auth/logout";
 const PASSWORD_URL = "/api/v1/me/password";
 const SPOTIFY_URL = "/api/v1/me/spotify";
+const ME_URL = "/api/v1/me";
+
+export type DeleteAccountRequest = {
+  password?: string;
+  confirm: string;
+};
 
 export type AuthResult =
   | { ok: true; user?: User }
@@ -100,6 +106,12 @@ export function changePassword(
 
 export function disconnectSpotify(): Promise<AuthResult> {
   return request("DELETE", SPOTIFY_URL);
+}
+
+export function deleteAccount(
+  values: DeleteAccountRequest,
+): Promise<AuthResult> {
+  return request("DELETE", ME_URL, values);
 }
 
 export async function logout(): Promise<void> {

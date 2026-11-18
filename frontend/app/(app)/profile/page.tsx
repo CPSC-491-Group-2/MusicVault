@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AccountDetailsPanel } from "@/components/account/AccountDetailsPanel";
+import { DeleteAccountSection } from "@/components/account/DeleteAccountSection";
 import { LogOutSection } from "@/components/account/LogOutSection";
 import { PasswordSection } from "@/components/account/PasswordSection";
 import { SpotifySection } from "@/components/account/SpotifySection";
@@ -39,6 +40,8 @@ export default async function ProfilePage({
       </section>
 
       <LogOutSection />
+
+      <DeleteAccountSection user={user} />
     </>
   );
 }
